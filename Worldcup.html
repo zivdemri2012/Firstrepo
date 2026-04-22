@@ -1,0 +1,495 @@
+
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מונדיאל 2026 – לוח המשחקים המלא</title>
+<style>
+  :root {
+    --gold: #D4A017;
+    --gold-light: #F5C842;
+    --dark: #0A0A0F;
+    --dark2: #12121A;
+    --dark3: #1A1A28;
+    --accent: #1E90FF;
+    --text: #E8E8F0;
+    --muted: #7878A0;
+    --display: Impact, 'Arial Black', 'Franklin Gothic Heavy', sans-serif;
+    --body: 'Segoe UI', Arial, 'Helvetica Neue', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: var(--body); background: var(--dark); color: var(--text); overflow-x: hidden; direction: rtl; }
+
+  /* HERO */
+  .hero {
+    position: relative; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 60% 40%, #1a1030 0%, var(--dark) 70%);
+  }
+  .hero-bg {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(212,160,23,0.04) 60px, rgba(212,160,23,0.04) 61px),
+      repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(212,160,23,0.04) 60px, rgba(212,160,23,0.04) 61px);
+  }
+  .hero-glow {
+    position: absolute; width: 700px; height: 700px; pointer-events: none;
+    background: radial-gradient(circle, rgba(212,160,23,0.18) 0%, transparent 70%);
+    top: 50%; left: 50%; transform: translate(-50%,-60%);
+    animation: pulse 4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{transform:translate(-50%,-60%) scale(1);opacity:1} 50%{transform:translate(-50%,-60%) scale(1.15);opacity:0.7} }
+  .hero-content { text-align: center; z-index: 2; padding: 2rem; }
+  .hero-year {
+    font-family: var(--display); font-size: clamp(100px,18vw,240px); line-height: 0.85;
+    background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 50%, #7A5A00 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    animation: fadeDown 1s ease;
+  }
+  .hero-title { font-family: var(--display); font-size: clamp(22px,4.5vw,54px); letter-spacing:10px; color:var(--text); margin-top:-8px; animation:fadeUp 1s ease 0.2s both; }
+  .hero-sub { font-size:13px; color:var(--muted); letter-spacing:4px; text-transform:uppercase; margin-top:12px; animation:fadeUp 1s ease 0.4s both; }
+  .hero-flags { display:flex; gap:8px; justify-content:center; margin-top:20px; font-size:36px; animation:fadeUp 1s ease 0.5s both; }
+  .hero-stats { display:flex; gap:40px; justify-content:center; margin-top:40px; flex-wrap:wrap; animation:fadeUp 1s ease 0.7s both; }
+  .stat { text-align:center; }
+  .stat-num { font-family:var(--display); font-size:48px; color:var(--gold); line-height:1; }
+  .stat-lbl { font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-top:4px; }
+  .scroll-hint {
+    position:absolute; bottom:28px; left:50%; transform:translateX(-50%);
+    color:var(--muted); font-size:11px; letter-spacing:3px;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    animation:bounce 2s ease-in-out infinite;
+  }
+  .scroll-hint::after { content:''; width:1px; height:50px; background:linear-gradient(to bottom,var(--gold),transparent); }
+  @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-8px)} }
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-40px)} to{opacity:1;transform:none} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:none} }
+
+  /* COUNTDOWN */
+  .countdown-section {
+    background:linear-gradient(135deg,rgba(212,160,23,0.12),rgba(30,144,255,0.05));
+    border-top:1px solid rgba(212,160,23,0.2); border-bottom:1px solid rgba(212,160,23,0.2);
+    padding:60px 24px; text-align:center;
+  }
+  .cd-label { font-size:11px; letter-spacing:5px; color:var(--gold); text-transform:uppercase; margin-bottom:28px; }
+  .cd-row { display:flex; gap:24px; justify-content:center; flex-wrap:wrap; align-items:flex-start; }
+  .cd-block { display:flex; flex-direction:column; align-items:center; }
+  .cd-num { font-family:var(--display); font-size:72px; color:var(--gold-light); line-height:1; min-width:80px; text-align:center; }
+  .cd-unit { font-size:11px; color:var(--muted); letter-spacing:3px; text-transform:uppercase; margin-top:4px; }
+  .cd-sep { font-family:var(--display); font-size:56px; color:rgba(212,160,23,0.3); padding-top:4px; }
+
+  /* SECTION HEADER */
+  .sec-hdr { text-align:center; margin-bottom:48px; }
+  .sec-lbl { font-size:11px; letter-spacing:5px; color:var(--gold); text-transform:uppercase; margin-bottom:12px; }
+  .sec-ttl { font-family:var(--display); font-size:clamp(30px,5vw,58px); letter-spacing:3px; }
+
+  /* VENUES */
+  .venues-section { background:var(--dark2); padding:80px 0; }
+  .venues-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
+    gap:16px; padding:0 24px; max-width:1300px; margin:0 auto;
+  }
+  .venue-card {
+    background:var(--dark3); border:1px solid rgba(212,160,23,0.12);
+    border-radius:12px; padding:22px; cursor:pointer; transition:all 0.25s;
+    position:relative; overflow:hidden;
+  }
+  .venue-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg,var(--gold),var(--accent));
+    transform:scaleX(0); transform-origin:right; transition:transform 0.3s;
+  }
+  .venue-card:hover { border-color:rgba(212,160,23,0.5); transform:translateY(-4px); box-shadow:0 16px 36px rgba(0,0,0,0.5); }
+  .venue-card:hover::before,.venue-card.active::before { transform:scaleX(1); transform-origin:left; }
+  .venue-card.active { border-color:var(--gold); background:rgba(212,160,23,0.08); }
+  .v-emoji { font-size:26px; margin-bottom:10px; }
+  .v-name { font-family:var(--display); font-size:17px; letter-spacing:1px; margin-bottom:4px; }
+  .v-city { font-size:12px; color:var(--muted); margin-bottom:10px; }
+  .v-count { display:inline-flex; align-items:center; gap:4px; background:rgba(212,160,23,0.15); color:var(--gold); font-size:12px; font-weight:700; padding:3px 10px; border-radius:20px; }
+
+  /* FILTERS */
+  .filters-bar {
+    background:rgba(18,18,26,0.97); border-top:1px solid rgba(255,255,255,0.06);
+    border-bottom:1px solid rgba(255,255,255,0.06); padding:18px 24px;
+    position:sticky; top:0; z-index:100; backdrop-filter:blur(20px);
+  }
+  .filters-inner { max-width:1300px; margin:0 auto; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .f-label { font-size:12px; color:var(--muted); letter-spacing:2px; white-space:nowrap; }
+  .f-tabs { display:flex; gap:8px; flex-wrap:wrap; }
+  .f-btn {
+    background:transparent; border:1px solid rgba(255,255,255,0.1); color:var(--muted);
+    padding:7px 16px; border-radius:100px; font-size:13px; font-family:var(--body);
+    cursor:pointer; transition:all 0.2s; white-space:nowrap;
+  }
+  .f-btn:hover { border-color:var(--gold); color:var(--gold); }
+  .f-btn.active { background:var(--gold); border-color:var(--gold); color:#000; font-weight:700; }
+  .s-wrap { margin-right:auto; position:relative; }
+  .s-wrap input {
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+    color:var(--text); padding:8px 16px 8px 36px; border-radius:100px;
+    font-size:13px; font-family:var(--body); width:220px; outline:none;
+    transition:border-color 0.2s; direction:rtl;
+  }
+  .s-wrap input:focus { border-color:var(--gold); }
+  .s-wrap::before { content:'🔍'; position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:13px; pointer-events:none; }
+
+  /* MATCHES */
+  .matches-section { background:var(--dark); padding:60px 0; }
+  .matches-container { max-width:1300px; margin:0 auto; padding:0 24px; }
+  .res-count { text-align:center; margin-bottom:32px; font-size:13px; color:var(--muted); }
+  .res-count span { color:var(--gold); font-weight:700; }
+  .day-group { margin-bottom:48px; }
+  .day-header { display:flex; align-items:center; gap:14px; margin-bottom:18px; }
+  .day-header::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,rgba(212,160,23,0.3),transparent); }
+  .day-date { font-family:var(--display); font-size:22px; color:var(--gold); letter-spacing:2px; white-space:nowrap; }
+  .day-wd { font-size:11px; color:var(--muted); letter-spacing:3px; text-transform:uppercase; white-space:nowrap; }
+  .matches-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:14px; }
+  .match-card {
+    background:var(--dark2); border:1px solid rgba(255,255,255,0.06);
+    border-radius:14px; padding:18px 22px; transition:all 0.25s; position:relative; overflow:hidden;
+  }
+  .match-card::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(212,160,23,0.04) 0%,transparent 60%); pointer-events:none; }
+  .match-card:hover { border-color:rgba(212,160,23,0.3); transform:translateY(-2px); box-shadow:0 12px 28px rgba(0,0,0,0.4); }
+  .m-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .m-num { font-size:11px; color:var(--muted); letter-spacing:1px; }
+  .m-phase { font-size:10px; letter-spacing:2px; text-transform:uppercase; padding:3px 10px; border-radius:20px; font-weight:600; }
+  .pg{background:rgba(39,174,96,.15);color:#27AE60} .pr32{background:rgba(30,144,255,.15);color:#1E90FF}
+  .pr16{background:rgba(155,89,182,.15);color:#9B59B6} .pqf{background:rgba(230,126,34,.15);color:#E67E22}
+  .psf{background:rgba(231,76,60,.15);color:#E74C3C} .pfinal{background:rgba(212,160,23,.25);color:var(--gold)}
+  .p3rd{background:rgba(127,140,141,.2);color:#95A5A6}
+  .m-teams { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; }
+  .team { flex:1; text-align:center; }
+  .t-name { font-weight:700; font-size:14px; line-height:1.3; }
+  .vs { background:rgba(255,255,255,0.06); border-radius:8px; padding:5px 12px; font-family:var(--display); font-size:16px; color:var(--muted); flex-shrink:0; }
+  .m-info { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .chip { display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--muted); }
+
+  /* EMPTY */
+  .empty { display:none; text-align:center; padding:80px 24px; color:var(--muted); }
+  .empty.show { display:block; }
+  .empty-e { font-size:48px; margin-bottom:16px; }
+
+  /* FOOTER */
+  footer { background:var(--dark2); border-top:1px solid rgba(212,160,23,0.15); padding:40px 24px; text-align:center; }
+  .f-logo { font-family:var(--display); font-size:34px; background:linear-gradient(90deg,var(--gold-light),var(--gold)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:4px; margin-bottom:8px; }
+  footer p { font-size:12px; color:var(--muted); margin-top:6px; }
+
+  @media(max-width:600px) {
+    .matches-grid{grid-template-columns:1fr}
+    .hero-stats{gap:20px} .stat-num{font-size:36px}
+    .s-wrap input{width:150px} .cd-num{font-size:48px}
+  }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-content">
+    <div class="hero-year">2026</div>
+    <div class="hero-title">גביע העולם</div>
+    <div class="hero-sub">ארצות הברית &middot; קנדה &middot; מקסיקו</div>
+    <div class="hero-flags">&#127482;&#127480; &#127464;&#127462; &#127474;&#127485;</div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">48</div><div class="stat-lbl">נבחרות</div></div>
+      <div class="stat"><div class="stat-num">104</div><div class="stat-lbl">משחקים</div></div>
+      <div class="stat"><div class="stat-num">16</div><div class="stat-lbl">אצטדיונים</div></div>
+      <div class="stat"><div class="stat-num">39</div><div class="stat-lbl">ימים</div></div>
+    </div>
+  </div>
+  <div class="scroll-hint">גלול למטה</div>
+</section>
+
+<section class="countdown-section">
+  <div class="cd-label">&#9201; עד משחק הפתיחה &mdash; 11 ביוני 2026, מקסיקו סיטי</div>
+  <div class="cd-row">
+    <div class="cd-block"><div class="cd-num" id="cd-d">--</div><div class="cd-unit">ימים</div></div>
+    <div class="cd-sep">:</div>
+    <div class="cd-block"><div class="cd-num" id="cd-h">--</div><div class="cd-unit">שעות</div></div>
+    <div class="cd-sep">:</div>
+    <div class="cd-block"><div class="cd-num" id="cd-m">--</div><div class="cd-unit">דקות</div></div>
+    <div class="cd-sep">:</div>
+    <div class="cd-block"><div class="cd-num" id="cd-s">--</div><div class="cd-unit">שניות</div></div>
+  </div>
+</section>
+
+<section class="venues-section">
+  <div style="max-width:1300px;margin:0 auto;padding:0 24px;">
+    <div class="sec-hdr">
+      <div class="sec-lbl">&#127967; אצטדיוני הטורניר</div>
+      <div class="sec-ttl">16 זירות קרב</div>
+    </div>
+  </div>
+  <div class="venues-grid" id="venuesGrid"></div>
+</section>
+
+<div class="filters-bar">
+  <div class="filters-inner">
+    <span class="f-label">שלב:</span>
+    <div class="f-tabs" id="phaseFilters">
+      <button class="f-btn active" data-phase="all">הכל</button>
+      <button class="f-btn" data-phase="groups">שלב הבתים</button>
+      <button class="f-btn" data-phase="r32">32 האחרונות</button>
+      <button class="f-btn" data-phase="r16">שמינית גמר</button>
+      <button class="f-btn" data-phase="qf">רבע גמר</button>
+      <button class="f-btn" data-phase="sf">חצי גמר</button>
+      <button class="f-btn" data-phase="final">גמר</button>
+    </div>
+    <div class="s-wrap">
+      <input type="text" id="searchInput" placeholder="חפש נבחרת או עיר..." />
+    </div>
+  </div>
+</div>
+
+<section class="matches-section">
+  <div class="matches-container">
+    <div class="sec-hdr" style="margin-bottom:28px;">
+      <div class="sec-lbl">&#128197; לוח המשחקים המלא</div>
+      <div class="sec-ttl">104 משחקים</div>
+    </div>
+    <div class="res-count" id="resCount"></div>
+    <div id="matchesContainer"></div>
+    <div class="empty" id="emptyState">
+      <div class="empty-e">&#9917;</div>
+      <p>לא נמצאו משחקים התואמים את החיפוש</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="f-logo">FIFA WORLD CUP 2026</div>
+  <p>נתונים מבוססים על לוח המשחקים הרשמי של פיפ&quot;א</p>
+  <p>11 ביוני &ndash; 19 ביולי 2026</p>
+</footer>
+
+<script>
+var MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+var WDAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+var PL={groups:'שלב הבתים',r32:'32 האחרונות',r16:'שמינית גמר',qf:'רבע גמר',sf:'חצי גמר',third:'משחק שלישי',final:'גמר'};
+var PC={groups:'pg',r32:'pr32',r16:'pr16',qf:'pqf',sf:'psf',third:'p3rd',final:'pfinal'};
+var VENUES={
+  'אסטדיו האצטקה':{city:'מקסיקו סיטי',country:'מקסיקו',e:'MX'},
+  'אסטדיו אקרון':{city:'גוואדלחארה',country:'מקסיקו',e:'MX'},
+  'BBVA':{city:'מונטריי',country:'מקסיקו',e:'MX'},
+  'BMO FIELD':{city:'טורונטו',country:'קנדה',e:'CA'},
+  'BC PLACE':{city:'ונקובר',country:'קנדה',e:'CA'},
+  'METLIFE':{city:'ניו יורק - ניו ג\'רזי',country:'ארה"ב',e:'US'},
+  'SOFI':{city:'לוס אנג\'לס',country:'ארה"ב',e:'US'},
+  'ג\'ילט':{city:'פוקסבורו (בוסטון)',country:'ארה"ב',e:'US'},
+  'AT&T':{city:'דאלאס',country:'ארה"ב',e:'US'},
+  'NRG':{city:'יוסטון',country:'ארה"ב',e:'US'},
+  'הארד רוק':{city:'מיאמי',country:'ארה"ב',e:'US'},
+  'מרצדס בנץ':{city:'אטלנטה',country:'ארה"ב',e:'US'},
+  'Arrowhead':{city:'קנזס סיטי',country:'ארה"ב',e:'US'},
+  'LUMEN':{city:'סיאטל',country:'ארה"ב',e:'US'},
+  "LEVI'S":{city:'סן פרנסיסקו',country:'ארה"ב',e:'US'},
+  'אצטדיון לינקולן':{city:'פילדלפיה',country:'ארה"ב',e:'US'}
+};
+var FLAGS={MX:'&#127474;&#127485;',CA:'&#127464;&#127462;',US:'&#127482;&#127480;'};
+var MATCHES=[
+  {id:1,date:'11.06.2026',teams:'מקסיקו - דרום אפריקה',venue:'אסטדיו האצטקה',phase:'groups'},
+  {id:2,date:'11.06.2026',teams:'דרום קוריאה - צ\'כיה',venue:'אסטדיו אקרון',phase:'groups'},
+  {id:3,date:'12.06.2026',teams:'קנדה - בוסניה',venue:'BMO FIELD',phase:'groups'},
+  {id:4,date:'12.06.2026',teams:'ארצות הברית - פרגוואי',venue:'SOFI',phase:'groups'},
+  {id:5,date:'13.06.2026',teams:'האיטי - סקוטלנד',venue:'ג\'ילט',phase:'groups'},
+  {id:6,date:'13.06.2026',teams:'אוסטרליה - טורקיה',venue:'BC PLACE',phase:'groups'},
+  {id:7,date:'13.06.2026',teams:'ברזיל - מרוקו',venue:'METLIFE',phase:'groups'},
+  {id:8,date:'13.06.2026',teams:'קטאר - שווייץ',venue:"LEVI'S",phase:'groups'},
+  {id:9,date:'14.06.2026',teams:'חוף השנהב - אקוודור',venue:'אצטדיון לינקולן',phase:'groups'},
+  {id:10,date:'14.06.2026',teams:'גרמניה - קורסאו',venue:'NRG',phase:'groups'},
+  {id:11,date:'14.06.2026',teams:'יפן - הולנד',venue:'AT&T',phase:'groups'},
+  {id:12,date:'14.06.2026',teams:'טוניסיה - שבדיה',venue:'BBVA',phase:'groups'},
+  {id:13,date:'15.06.2026',teams:'אורוגוואי - ערב הסעודית',venue:'הארד רוק',phase:'groups'},
+  {id:14,date:'15.06.2026',teams:'ספרד - כף ורדה',venue:'מרצדס בנץ',phase:'groups'},
+  {id:15,date:'15.06.2026',teams:'איראן - ניו זילנד',venue:'SOFI',phase:'groups'},
+  {id:16,date:'15.06.2026',teams:'בלגיה - מצרים',venue:'LUMEN',phase:'groups'},
+  {id:17,date:'16.06.2026',teams:'צרפת - סנגל',venue:'METLIFE',phase:'groups'},
+  {id:18,date:'16.06.2026',teams:'נורבגיה - עיראק',venue:'ג\'ילט',phase:'groups'},
+  {id:19,date:'16.06.2026',teams:'ארגנטינה - אלג\'יריה',venue:'Arrowhead',phase:'groups'},
+  {id:20,date:'16.06.2026',teams:'אוסטריה - ירדן',venue:"LEVI'S",phase:'groups'},
+  {id:21,date:'17.06.2026',teams:'גאנה - פנמה',venue:'BMO FIELD',phase:'groups'},
+  {id:22,date:'17.06.2026',teams:'אנגליה - קרואטיה',venue:'AT&T',phase:'groups'},
+  {id:23,date:'17.06.2026',teams:'פורטוגל - קונגו',venue:'NRG',phase:'groups'},
+  {id:24,date:'17.06.2026',teams:'אוזבקיסטן - קולומביה',venue:'אסטדיו האצטקה',phase:'groups'},
+  {id:25,date:'18.06.2026',teams:'דרום אפריקה - צ\'כיה',venue:'מרצדס בנץ',phase:'groups'},
+  {id:26,date:'18.06.2026',teams:'שווייץ - בוסניה',venue:'SOFI',phase:'groups'},
+  {id:27,date:'18.06.2026',teams:'קנדה - קטאר',venue:'BC PLACE',phase:'groups'},
+  {id:28,date:'18.06.2026',teams:'מקסיקו - דרום קוריאה',venue:'אסטדיו אקרון',phase:'groups'},
+  {id:29,date:'19.06.2026',teams:'ברזיל - האיטי',venue:'אצטדיון לינקולן',phase:'groups'},
+  {id:30,date:'19.06.2026',teams:'מרוקו - סקוטלנד',venue:'ג\'ילט',phase:'groups'},
+  {id:31,date:'19.06.2026',teams:'פרגוואי - טורקיה',venue:"LEVI'S",phase:'groups'},
+  {id:32,date:'19.06.2026',teams:'ארצות הברית - אוסטרליה',venue:'LUMEN',phase:'groups'},
+  {id:33,date:'20.06.2026',teams:'גרמניה - חוף השנהב',venue:'BMO FIELD',phase:'groups'},
+  {id:34,date:'20.06.2026',teams:'אקוודור - קורסאו',venue:'Arrowhead',phase:'groups'},
+  {id:35,date:'20.06.2026',teams:'הולנד - שבדיה',venue:'NRG',phase:'groups'},
+  {id:36,date:'20.06.2026',teams:'טוניסיה - יפן',venue:'BBVA',phase:'groups'},
+  {id:37,date:'21.06.2026',teams:'אורוגוואי - כף ורדה',venue:'הארד רוק',phase:'groups'},
+  {id:38,date:'21.06.2026',teams:'ספרד - ערב הסעודית',venue:'מרצדס בנץ',phase:'groups'},
+  {id:39,date:'21.06.2026',teams:'בלגיה - איראן',venue:'SOFI',phase:'groups'},
+  {id:40,date:'21.06.2026',teams:'מצרים - ניו זילנד',venue:'BC PLACE',phase:'groups'},
+  {id:41,date:'22.06.2026',teams:'נורבגיה - סנגל',venue:'METLIFE',phase:'groups'},
+  {id:42,date:'22.06.2026',teams:'צרפת - עיראק',venue:'אצטדיון לינקולן',phase:'groups'},
+  {id:43,date:'22.06.2026',teams:'ארגנטינה - אוסטריה',venue:'AT&T',phase:'groups'},
+  {id:44,date:'22.06.2026',teams:'אלג\'יריה - ירדן',venue:"LEVI'S",phase:'groups'},
+  {id:45,date:'23.06.2026',teams:'אנגליה - גאנה',venue:'ג\'ילט',phase:'groups'},
+  {id:46,date:'23.06.2026',teams:'פנמה - קרואטיה',venue:'BMO FIELD',phase:'groups'},
+  {id:47,date:'23.06.2026',teams:'פורטוגל - אוזבקיסטן',venue:'NRG',phase:'groups'},
+  {id:48,date:'23.06.2026',teams:'קולומביה - קונגו',venue:'אסטדיו אקרון',phase:'groups'},
+  {id:49,date:'24.06.2026',teams:'ברזיל - סקוטלנד',venue:'הארד רוק',phase:'groups'},
+  {id:50,date:'24.06.2026',teams:'מרוקו - האיטי',venue:'מרצדס בנץ',phase:'groups'},
+  {id:51,date:'24.06.2026',teams:'קנדה - שווייץ',venue:'BC PLACE',phase:'groups'},
+  {id:52,date:'24.06.2026',teams:'קטאר - בוסניה',venue:'LUMEN',phase:'groups'},
+  {id:53,date:'24.06.2026',teams:'מקסיקו - צ\'כיה',venue:'אסטדיו האצטקה',phase:'groups'},
+  {id:54,date:'24.06.2026',teams:'דרום אפריקה - דרום קוריאה',venue:'BBVA',phase:'groups'},
+  {id:55,date:'25.06.2026',teams:'קורסאו - חוף השנהב',venue:'אצטדיון לינקולן',phase:'groups'},
+  {id:56,date:'25.06.2026',teams:'גרמניה - אקוודור',venue:'METLIFE',phase:'groups'},
+  {id:57,date:'25.06.2026',teams:'יפן - שבדיה',venue:'AT&T',phase:'groups'},
+  {id:58,date:'25.06.2026',teams:'טוניסיה - הולנד',venue:'Arrowhead',phase:'groups'},
+  {id:59,date:'25.06.2026',teams:'ארצות הברית - טורקיה',venue:'SOFI',phase:'groups'},
+  {id:60,date:'25.06.2026',teams:'פרגוואי - אוסטרליה',venue:"LEVI'S",phase:'groups'},
+  {id:61,date:'26.06.2026',teams:'נורבגיה - צרפת',venue:'ג\'ילט',phase:'groups'},
+  {id:62,date:'26.06.2026',teams:'סנגל - עיראק',venue:'BMO FIELD',phase:'groups'},
+  {id:63,date:'26.06.2026',teams:'מצרים - איראן',venue:'LUMEN',phase:'groups'},
+  {id:64,date:'26.06.2026',teams:'בלגיה - ניו זילנד',venue:'BC PLACE',phase:'groups'},
+  {id:65,date:'26.06.2026',teams:'כף ורדה - ערב הסעודית',venue:'NRG',phase:'groups'},
+  {id:66,date:'26.06.2026',teams:'ספרד - אורוגוואי',venue:'אסטדיו אקרון',phase:'groups'},
+  {id:67,date:'27.06.2026',teams:'אנגליה - פנמה',venue:'METLIFE',phase:'groups'},
+  {id:68,date:'27.06.2026',teams:'קרואטיה - גאנה',venue:'אצטדיון לינקולן',phase:'groups'},
+  {id:69,date:'27.06.2026',teams:'אוסטריה - אלג\'יריה',venue:'Arrowhead',phase:'groups'},
+  {id:70,date:'27.06.2026',teams:'ארגנטינה - ירדן',venue:'AT&T',phase:'groups'},
+  {id:71,date:'27.06.2026',teams:'קולומביה - פורטוגל',venue:'הארד רוק',phase:'groups'},
+  {id:72,date:'27.06.2026',teams:'אוזבקיסטן - קונגו',venue:'מרצדס בנץ',phase:'groups'},
+  {id:73,date:'28.06.2026',teams:'TBD',venue:'SOFI',phase:'r32'},
+  {id:74,date:'29.06.2026',teams:'TBD',venue:'ג\'ילט',phase:'r32'},
+  {id:75,date:'29.06.2026',teams:'TBD',venue:'BBVA',phase:'r32'},
+  {id:76,date:'29.06.2026',teams:'TBD',venue:'NRG',phase:'r32'},
+  {id:77,date:'30.06.2026',teams:'TBD',venue:'METLIFE',phase:'r32'},
+  {id:78,date:'30.06.2026',teams:'TBD',venue:'AT&T',phase:'r32'},
+  {id:79,date:'30.06.2026',teams:'TBD',venue:'אסטדיו האצטקה',phase:'r32'},
+  {id:80,date:'01.07.2026',teams:'TBD',venue:'מרצדס בנץ',phase:'r32'},
+  {id:81,date:'01.07.2026',teams:'TBD',venue:"LEVI'S",phase:'r32'},
+  {id:82,date:'01.07.2026',teams:'TBD',venue:'LUMEN',phase:'r32'},
+  {id:83,date:'02.07.2026',teams:'TBD',venue:'BMO FIELD',phase:'r32'},
+  {id:84,date:'02.07.2026',teams:'TBD',venue:'SOFI',phase:'r32'},
+  {id:85,date:'02.07.2026',teams:'TBD',venue:'BC PLACE',phase:'r32'},
+  {id:86,date:'03.07.2026',teams:'TBD',venue:'הארד רוק',phase:'r32'},
+  {id:87,date:'03.07.2026',teams:'TBD',venue:'Arrowhead',phase:'r32'},
+  {id:88,date:'03.07.2026',teams:'TBD',venue:'AT&T',phase:'r32'},
+  {id:89,date:'04.07.2026',teams:'TBD',venue:'אצטדיון לינקולן',phase:'r16'},
+  {id:90,date:'04.07.2026',teams:'TBD',venue:'NRG',phase:'r16'},
+  {id:91,date:'05.07.2026',teams:'TBD',venue:'METLIFE',phase:'r16'},
+  {id:92,date:'05.07.2026',teams:'TBD',venue:'אסטדיו האצטקה',phase:'r16'},
+  {id:93,date:'06.07.2026',teams:'TBD',venue:'AT&T',phase:'r16'},
+  {id:94,date:'06.07.2026',teams:'TBD',venue:'LUMEN',phase:'r16'},
+  {id:95,date:'07.07.2026',teams:'TBD',venue:'מרצדס בנץ',phase:'r16'},
+  {id:96,date:'07.07.2026',teams:'TBD',venue:'BC PLACE',phase:'r16'},
+  {id:97,date:'09.07.2026',teams:'TBD',venue:'ג\'ילט',phase:'qf'},
+  {id:98,date:'10.07.2026',teams:'TBD',venue:'SOFI',phase:'qf'},
+  {id:99,date:'11.07.2026',teams:'TBD',venue:'הארד רוק',phase:'qf'},
+  {id:100,date:'11.07.2026',teams:'TBD',venue:'Arrowhead',phase:'qf'},
+  {id:101,date:'14.07.2026',teams:'TBD',venue:'AT&T',phase:'sf'},
+  {id:102,date:'15.07.2026',teams:'TBD',venue:'מרצדס בנץ',phase:'sf'},
+  {id:103,date:'18.07.2026',teams:'TBD',venue:'הארד רוק',phase:'third'},
+  {id:104,date:'19.07.2026',teams:'GAMER WORLD CUP',venue:'METLIFE',phase:'final'}
+];
+
+var vCounts={};
+MATCHES.forEach(function(m){vCounts[m.venue]=(vCounts[m.venue]||0)+1;});
+
+var curPhase='all',curVenue=null,curSearch='';
+
+function pd(d){var p=d.split('.');return new Date(+p[2],+p[1]-1,+p[0]);}
+function fd(d){var dt=pd(d);return dt.getDate()+' '+MONTHS[dt.getMonth()];}
+function fw(d){return WDAYS[pd(d).getDay()];}
+
+function buildVenues(){
+  var g=document.getElementById('venuesGrid');
+  g.innerHTML='';
+  Object.keys(VENUES).forEach(function(name){
+    var info=VENUES[name];
+    var cnt=vCounts[name]||0;
+    var fl=FLAGS[info.e]||'';
+    var c=document.createElement('div');
+    c.className='venue-card'+(curVenue===name?' active':'');
+    c.innerHTML='<div class="v-emoji">'+fl+'</div>'+
+      '<div class="v-name">'+name+'</div>'+
+      '<div class="v-city">'+info.city+', '+info.country+'</div>'+
+      '<span class="v-count">&#9917; '+cnt+' משחקים</span>';
+    c.onclick=function(){curVenue=(curVenue===name)?null:name;buildVenues();renderMatches();};
+    g.appendChild(c);
+  });
+}
+
+function renderMatches(){
+  var ct=document.getElementById('matchesContainer');
+  var em=document.getElementById('emptyState');
+  var rc=document.getElementById('resCount');
+  var q=curSearch.toLowerCase();
+  var filtered=MATCHES.filter(function(m){
+    if(curPhase!=='all'&&m.phase!==curPhase)return false;
+    if(curVenue&&m.venue!==curVenue)return false;
+    if(q){
+      var v=VENUES[m.venue];
+      var hay=(m.teams+m.venue+(v?v.city:'')).toLowerCase();
+      if(hay.indexOf(q)<0)return false;
+    }
+    return true;
+  });
+  if(!filtered.length){ct.innerHTML='';em.classList.add('show');rc.innerHTML='';return;}
+  em.classList.remove('show');
+  rc.innerHTML='מציג <span>'+filtered.length+'</span> מתוך '+MATCHES.length+' משחקים';
+  var byDate={};
+  filtered.forEach(function(m){if(!byDate[m.date])byDate[m.date]=[];byDate[m.date].push(m);});
+  ct.innerHTML='';
+  Object.keys(byDate).forEach(function(date){
+    var grp=document.createElement('div');grp.className='day-group';
+    var hdr=document.createElement('div');hdr.className='day-header';
+    hdr.innerHTML='<span class="day-date">'+fd(date)+', 2026</span><span class="day-wd">יום '+fw(date)+'</span>';
+    grp.appendChild(hdr);
+    var grid=document.createElement('div');grid.className='matches-grid';
+    byDate[date].forEach(function(m){
+      var v=VENUES[m.venue]||{city:'',e:'US'};
+      var fl=FLAGS[v.e]||'';
+      var parts=m.teams.split(' - ');
+      var tHTML;
+      if(m.teams==='TBD'){
+        tHTML='<div class="m-teams"><div class="team"><div class="t-name" style="color:var(--muted)">TBD</div></div><div class="vs">VS</div><div class="team"><div class="t-name" style="color:var(--muted)">TBD</div></div></div>';
+      } else if(parts.length===2){
+        tHTML='<div class="m-teams"><div class="team"><div class="t-name">'+parts[0]+'</div></div><div class="vs">VS</div><div class="team"><div class="t-name">'+parts[1]+'</div></div></div>';
+      } else {
+        tHTML='<div class="m-teams" style="justify-content:center"><div class="t-name" style="font-size:15px;text-align:center">'+m.teams+'</div></div>';
+      }
+      var card=document.createElement('div');card.className='match-card';
+      card.innerHTML=
+        '<div class="m-meta"><span class="m-num">משחק #'+m.id+'</span><span class="m-phase '+PC[m.phase]+'">'+PL[m.phase]+'</span></div>'+
+        tHTML+
+        '<div class="m-info"><span class="chip">'+fl+' '+m.venue+'</span><span class="chip">&#128205; '+v.city+'</span></div>';
+      grid.appendChild(card);
+    });
+    grp.appendChild(grid);ct.appendChild(grp);
+  });
+}
+
+document.getElementById('phaseFilters').addEventListener('click',function(e){
+  var btn=e.target.closest('.f-btn');if(!btn)return;
+  document.querySelectorAll('.f-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');curPhase=btn.getAttribute('data-phase');renderMatches();
+});
+document.getElementById('searchInput').addEventListener('input',function(e){curSearch=e.target.value;renderMatches();});
+
+function tick(){
+  var diff=new Date('2026-06-11T19:00:00Z')-new Date();
+  if(diff<=0){['cd-d','cd-h','cd-m','cd-s'].forEach(function(id){document.getElementById(id).textContent='00';});return;}
+  document.getElementById('cd-d').textContent=String(Math.floor(diff/86400000)).padStart(2,'0');
+  document.getElementById('cd-h').textContent=String(Math.floor((diff%86400000)/3600000)).padStart(2,'0');
+  document.getElementById('cd-m').textContent=String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+  document.getElementById('cd-s').textContent=String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+}
+setInterval(tick,1000);tick();
+buildVenues();
+renderMatches();
+</script>
+</body>
+</html>
