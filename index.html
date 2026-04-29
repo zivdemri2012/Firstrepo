@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>משחק זיכרון קלפים</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Heebo', sans-serif;
+    background: #1a1a2e;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: #eee;
+  }
+  h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; color: #e2b96f; letter-spacing: 2px; }
+  #stats {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 20px;
+    font-size: 1rem;
+    color: #aaa;
+  }
+  #stats span { color: #e2b96f; font-weight: 600; }
+  #board {
+    display: grid;
+    grid-template-columns: repeat(4, 80px);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .card {
+    width: 80px;
+    height: 110px;
+    perspective: 600px;
+    cursor: pointer;
+  }
+  .card-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.4s ease;
+    border-radius: 10px;
+  }
+  .card.flipped .card-inner { transform: rotateY(180deg); }
+  .card.matched .card-inner { transform: rotateY(180deg); }
+  .card.matched .card-front { background: #1a3a2e; border-color: #2ecc71; }
+  .card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.4rem;
+    border: 2px solid;
+  }
+  .card-back {
+    background: #16213e;
+    border-color: #e2b96f;
+    color: #e2b96f;
+    font-size: 1.8rem;
+    font-weight: 800;
+  }
+  .card-front {
+    background: #0f3460;
+    border-color: #e94560;
+    transform: rotateY(180deg);
+  }
+  #restart {
+    padding: 10px 30px;
+    font-family: 'Heebo', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    background: #e2b96f;
+    color: #1a1a2e;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  #restart:hover { background: #f0ca8a; }
+  #win-msg {
+    font-size: 1.4rem;
+    color: #2ecc71;
+    font-weight: 800;
+    margin-bottom: 10px;
+    min-height: 30px;
+  }
+</style>
+</head>
+<body>
+
+<h1>🃏 משחק זיכרון</h1>
+<div id="stats">
+  <div>ניסיונות: <span id="moves">0</span></div>
+  <div>זוגות: <span id="pairs">0</span>/8</div>
+</div>
+<div id="win-msg" id="win-msg"></div>
+<div id="board"></div>
+<button id="restart" onclick="init()">התחל מחדש</button>
+
+<script>
+const emojis = ['🦁','🐯','🦊','🐸','🦄','🐙','🦋','🐬'];
+let cards = [], flipped = [], matched = 0, moves = 0, lock = false;
+
+function shuffle(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
+function init() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  document.getElementById('win-msg').textContent = '';
+  flipped = []; matched = 0; moves = 0; lock = false;
+  document.getElementById('moves').textContent = '0';
+  document.getElementById('pairs').textContent = '0';
+
+  const deck = shuffle([...emojis, ...emojis]);
+  cards = deck.map((emoji, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.index = i;
+    card.dataset.emoji = emoji;
+    card.innerHTML = `
+      <div class="card-inner">
+        <div class="card-back">?</div>
+        <div class="card-front">${emoji}</div>
+      </div>`;
+    card.addEventListener('click', () => flipCard(card));
+    board.appendChild(card);
+    return card;
+  });
+}
+
+function flipCard(card) {
+  if (lock) return;
+  if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+  card.classList.add('flipped');
+  flipped.push(card);
+
+  if (flipped.length === 2) {
+    lock = true;
+    moves++;
+    document.getElementById('moves').textContent = moves;
+
+    if (flipped[0].dataset.emoji === flipped[1].dataset.emoji) {
+      flipped.forEach(c => c.classList.add('matched'));
+      matched++;
+      document.getElementById('pairs').textContent = matched;
+      flipped = [];
+      lock = false;
+      if (matched === 8) {
+        document.getElementById('win-msg').textContent = '🎉 כל הכבוד! ניצחת ב־' + moves + ' ניסיונות!';
+      }
+    } else {
+      setTimeout(() => {
+        flipped.forEach(c => c.classList.remove('flipped'));
+        flipped = [];
+        lock = false;
+      }, 900);
+    }
+  }
+}
+
+init();
+</script>
+</body>
+</html>
