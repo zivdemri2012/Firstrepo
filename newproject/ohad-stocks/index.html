@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ohad Demri Stocks</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --primary-light: #eef2ff;
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --text-subtle: #94a3b8;
+      --green: #059669;
+      --green-bg: #d1fae5;
+      --red: #dc2626;
+      --red-bg: #fee2e2;
+      --orange: #d97706;
+      --orange-bg: #fef3c7;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+      --shadow: 0 1px 3px rgba(0,0,0,0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: white;
+      padding: 24px 32px;
+      box-shadow: var(--shadow);
+    }
+
+    .header-inner {
+      max-width: 1600px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-title svg { opacity: 0.9; }
+
+    .header-title h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .header-title p {
+      font-size: 0.85rem;
+      opacity: 0.75;
+      margin-top: 2px;
+    }
+
+    .header-actions { display: flex; gap: 10px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 18px; border-radius: var(--radius-sm);
+      font-size: 0.875rem; font-weight: 600; cursor: pointer;
+      border: none; transition: all 0.15s;
+    }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-white {
+      background: white; color: var(--primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .btn-white:hover { background: #f0f0ff; }
+
+    .btn-outline {
+      background: transparent; color: white;
+      border: 1.5px solid rgba(255,255,255,0.5);
+    }
+    .btn-outline:hover { background: rgba(255,255,255,0.12); }
+
+    .btn-primary {
+      background: var(--primary); color: white;
+      box-shadow: 0 1px 3px rgba(99,102,241,0.35);
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .btn-ghost {
+      background: transparent; color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--bg); }
+
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-danger:hover { background: #dc2626; }
+
+    .btn-sm { padding: 5px 10px; font-size: 0.78rem; }
+
+    /* ── Summary Cards ── */
+    .summary {
+      max-width: 1600px;
+      margin: 24px auto 0;
+      padding: 0 32px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .card-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      direction: ltr;
+      text-align: right;
+    }
+
+    .card-value.positive { color: var(--green); }
+    .card-value.negative { color: var(--red); }
+    .card-value.tax { color: var(--orange); }
+
+    .card-sub {
+      font-size: 0.75rem;
+      color: var(--text-subtle);
+      margin-top: 4px;
+    }
+
+    /* ── Table Wrapper ── */
+    .table-section {
+      max-width: 1600px;
+      margin: 24px auto;
+      padding: 0 32px 40px;
+    }
+
+    .table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .table-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .table-count {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      min-width: 1200px;
+    }
+
+    thead th {
+      background: #f8fafc;
+      padding: 12px 14px;
+      text-align: right;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    thead th:last-child { text-align: center; }
+
+    tbody tr {
+      border-bottom: 1px solid #f1f5f9;
+      transition: background 0.1s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fafbff; }
+
+    td {
+      padding: 13px 14px;
+      color: var(--text);
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    td.num {
+      direction: ltr;
+      text-align: left;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stock-name {
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .currency-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: var(--radius-sm);
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .profit-cell.positive {
+      color: var(--green);
+      font-weight: 700;
+    }
+    .profit-cell.negative {
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    .tax-cell {
+      color: var(--orange);
+      font-weight: 600;
+    }
+
+    .actions-cell {
+      text-align: center;
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+    }
+
+    .icon-btn {
+      width: 30px; height: 30px;
+      border: none; border-radius: var(--radius-sm);
+      background: transparent; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-subtle); transition: all 0.15s;
+    }
+    .icon-btn:hover { background: var(--bg); color: var(--text); }
+    .icon-btn.del:hover { background: #fee2e2; color: var(--red); }
+
+    /* ── Totals row ── */
+    tfoot tr { background: #f8fafc; }
+    tfoot td {
+      padding: 12px 14px;
+      font-weight: 700;
+      border-top: 2px solid var(--border);
+      font-size: 0.85rem;
+    }
+    tfoot td.total-label {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-subtle);
+    }
+    .empty-state svg { margin-bottom: 14px; opacity: 0.35; }
+    .empty-state p { font-size: 1rem; font-weight: 500; }
+    .empty-state span { font-size: 0.85rem; display: block; margin-top: 6px; }
+
+    /* ── Modal ── */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(15,23,42,0.5);
+      backdrop-filter: blur(3px);
+      z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      width: 100%; max-width: 560px;
+      box-shadow: var(--shadow-lg);
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: modalIn 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.92) translateY(10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px 0;
+    }
+    .modal-header h2 { font-size: 1.1rem; font-weight: 700; }
+
+    .modal-close {
+      width: 30px; height: 30px; border: none; background: none;
+      cursor: pointer; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center;
+      color: var(--text-subtle); transition: all 0.15s;
+    }
+    .modal-close:hover { background: var(--border); color: var(--text); }
+
+    .modal form { padding: 20px 24px 24px; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+
+    .form-group {
+      display: flex; flex-direction: column; gap: 5px;
+    }
+
+    .form-group label {
+      font-size: 0.78rem; font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+
+    .required { color: #ef4444; }
+
+    .form-group input,
+    .form-group select {
+      width: 100%; padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem; color: var(--text);
+      background: var(--surface); outline: none;
+      font-family: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .form-group input[type="number"] { direction: ltr; text-align: right; }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    }
+
+    .calc-preview {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      margin-top: 4px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .calc-item label {
+      font-size: 0.72rem; font-weight: 700;
+      color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 0.04em; display: block; margin-bottom: 3px;
+    }
+    .calc-item .val {
+      font-size: 1rem; font-weight: 700;
+      direction: ltr; text-align: right;
+    }
+    .calc-item .val.pos { color: var(--green); }
+    .calc-item .val.neg { color: var(--red); }
+    .calc-item .val.tax { color: var(--orange); }
+
+    .modal-footer {
+      display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;
+    }
+
+    /* ── Delete confirm ── */
+    .modal-sm { max-width: 380px; padding: 24px; }
+    .confirm-text { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; margin: 14px 0 20px; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--text); color: white;
+      padding: 10px 22px; border-radius: 999px;
+      font-size: 0.875rem; font-weight: 500;
+      z-index: 300; box-shadow: var(--shadow-lg);
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      pointer-events: none; white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.ok  { background: #059669; }
+    .toast.err { background: #dc2626; }
+
+    @media (max-width: 600px) {
+      .header { padding: 16px; }
+      .summary, .table-section { padding: 0 16px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid .full { grid-column: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-inner">
+    <div class="header-title">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+        <polyline points="16 7 22 7 22 13"/>
+      </svg>
+      <div>
+        <h1>Ohad Demri Stocks</h1>
+        <p>ניהול ומעקב תיק השקעות</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" onclick="exportCSV()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        ייצוא CSV
+      </button>
+      <button class="btn btn-white" onclick="openAdd()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        הוסף מנייה
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Summary Cards -->
+<div class="summary" id="summary">
+  <div class="card">
+    <div class="card-label">סה"כ הושקע</div>
+    <div class="card-value" id="sumBuy">—</div>
+    <div class="card-sub">עלות קנייה כוללת</div>
+  </div>
+  <div class="card">
+    <div class="card-label">סה"כ נמכר</div>
+    <div class="card-value" id="sumSell">—</div>
+    <div class="card-sub">תמורת מכירה כוללת</div>
+  </div>
+  <div class="card">
+    <div class="card-label">מס הכנסה (25%)</div>
+    <div class="card-value tax" id="sumTax">—</div>
+    <div class="card-sub">סה"כ מס לתשלום</div>
+  </div>
+  <div class="card">
+    <div class="card-label">רווח נקי</div>
+    <div class="card-value" id="sumProfit">—</div>
+    <div class="card-sub">לאחר עמלות ומס</div>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="table-section">
+  <div class="table-header">
+    <div>
+      <div class="table-title">פירוט עסקאות</div>
+    </div>
+    <span class="table-count" id="tableCount"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table id="mainTable">
+      <thead>
+        <tr>
+          <th>שם המנייה</th>
+          <th>מטבע</th>
+          <th>תאריך קנייה</th>
+          <th>שער קנייה</th>
+          <th>שער מכירה</th>
+          <th>מחיר קנייה</th>
+          <th>מחיר מכירה</th>
+          <th>עמלת קנייה</th>
+          <th>עמלת מכירה</th>
+          <th>מס הכנסה 25%</th>
+          <th>רווח נקי</th>
+          <th>פעולות</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+      <tfoot id="tableFoot"></tfoot>
+    </table>
+    <div class="empty-state" id="emptyState" style="display:none">
+      <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+        <polyline points="16 7 22 7 22 13"/>
+      </svg>
+      <p>אין עסקאות עדיין</p>
+      <span>לחץ על "הוסף מנייה" כדי להתחיל</span>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="overlay" id="overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">הוסף מנייה</h2>
+      <button class="modal-close" onclick="closeModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <form id="stockForm" novalidate>
+      <input type="hidden" id="editId">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>שם המנייה <span class="required">*</span></label>
+          <input type="text" id="f_name" placeholder="לדוג׳: Apple, Tesla, תל אביב 35">
+        </div>
+        <div class="form-group">
+          <label>מטבע <span class="required">*</span></label>
+          <select id="f_currency">
+            <option value="ILS">₪ שקל (ILS)</option>
+            <option value="USD">$ דולר (USD)</option>
+            <option value="EUR">€ אירו (EUR)</option>
+            <option value="GBP">£ פאונד (GBP)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>תאריך קנייה <span class="required">*</span></label>
+          <input type="date" id="f_buyDate">
+        </div>
+        <div class="form-group">
+          <label>שער קנייה</label>
+          <input type="number" id="f_buyRate" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label>שער מכירה</label>
+          <input type="number" id="f_sellRate" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label>מחיר קנייה (סה"כ) <span class="required">*</span></label>
+          <input type="number" id="f_buyTotal" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label>מחיר מכירה (סה"כ) <span class="required">*</span></label>
+          <input type="number" id="f_sellTotal" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label>עמלת קנייה</label>
+          <input type="number" id="f_buyComm" placeholder="0.00" step="0.01" min="0" value="0">
+        </div>
+        <div class="form-group">
+          <label>עמלת מכירה</label>
+          <input type="number" id="f_sellComm" placeholder="0.00" step="0.01" min="0" value="0">
+        </div>
+
+        <div class="form-group full">
+          <label>תצוגה מקדימה של חישובים</label>
+          <div class="calc-preview">
+            <div class="calc-item">
+              <label>רווח גולמי</label>
+              <div class="val" id="prev_gross">—</div>
+            </div>
+            <div class="calc-item">
+              <label>עמלות סה"כ</label>
+              <div class="val" id="prev_comm">—</div>
+            </div>
+            <div class="calc-item">
+              <label>מס הכנסה (25%)</label>
+              <div class="val tax" id="prev_tax">—</div>
+            </div>
+            <div class="calc-item">
+              <label>רווח נקי</label>
+              <div class="val" id="prev_net">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="closeModal()">ביטול</button>
+        <button type="submit" class="btn btn-primary" id="saveBtn">שמור</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="overlay" id="deleteOverlay" style="display:none">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>מחיקת מנייה</h2>
+    </div>
+    <p class="confirm-text">האם למחוק את <strong id="deleteStockName"></strong>? פעולה זו אינה ניתנת לביטול.</p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeDelete()">ביטול</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn">מחק</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Storage ───────────────────────────────────────
+  const STORAGE_KEY = 'ohad_stocks_v1';
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch { return []; }
+  }
+
+  function save(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  // ── Calculations ──────────────────────────────────
+  function calc(row) {
+    const buyTotal  = +row.buyTotal  || 0;
+    const sellTotal = +row.sellTotal || 0;
+    const buyComm   = +row.buyComm   || 0;
+    const sellComm  = +row.sellComm  || 0;
+
+    const gross      = sellTotal - buyTotal;
+    const totalComm  = buyComm + sellComm;
+    const taxable    = gross - totalComm;
+    const tax        = taxable > 0 ? taxable * 0.25 : 0;
+    const net        = taxable - tax;
+
+    return { gross, totalComm, tax, net };
+  }
+
+  // ── Formatting ────────────────────────────────────
+  const SYMBOLS = { ILS: '₪', USD: '$', EUR: '€', GBP: '£' };
+
+  function fmt(n, currency) {
+    const sym = SYMBOLS[currency] || '';
+    const abs = Math.abs(n).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return n < 0 ? `${sym}${abs}-` : `${sym}${abs}`;
+  }
+
+  function fmtRate(n) {
+    if (!n && n !== 0) return '—';
+    return (+n).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function fmtDate(d) {
+    if (!d) return '—';
+    const [y, m, day] = d.split('-');
+    return `${day}/${m}/${y}`;
+  }
+
+  // ── Render ────────────────────────────────────────
+  function render() {
+    const data = load();
+    const tbody = document.getElementById('tableBody');
+    const tfoot = document.getElementById('tableFoot');
+    const empty = document.getElementById('emptyState');
+    const count = document.getElementById('tableCount');
+
+    tbody.innerHTML = '';
+    tfoot.innerHTML = '';
+
+    count.textContent = data.length ? `${data.length} עסקאות` : '';
+
+    if (data.length === 0) {
+      empty.style.display = 'block';
+      document.getElementById('mainTable').style.display = 'none';
+      updateSummary([]);
+      return;
+    }
+
+    empty.style.display = 'none';
+    document.getElementById('mainTable').style.display = '';
+
+    data.forEach(row => {
+      const { gross, totalComm, tax, net } = calc(row);
+      const sym = row.currency;
+      const tr = document.createElement('tr');
+
+      tr.innerHTML = `
+        <td><span class="stock-name">${esc(row.name)}</span></td>
+        <td><span class="currency-badge">${esc(sym)}</span></td>
+        <td>${fmtDate(row.buyDate)}</td>
+        <td class="num">${row.buyRate ? fmtRate(row.buyRate) : '—'}</td>
+        <td class="num">${row.sellRate ? fmtRate(row.sellRate) : '—'}</td>
+        <td class="num">${fmt(+row.buyTotal, sym)}</td>
+        <td class="num">${fmt(+row.sellTotal, sym)}</td>
+        <td class="num">${row.buyComm > 0 ? fmt(+row.buyComm, sym) : '—'}</td>
+        <td class="num">${row.sellComm > 0 ? fmt(+row.sellComm, sym) : '—'}</td>
+        <td class="num tax-cell">${tax > 0 ? fmt(tax, sym) : '—'}</td>
+        <td class="num profit-cell ${net >= 0 ? 'positive' : 'negative'}">${fmt(net, sym)}</td>
+        <td>
+          <div class="actions-cell">
+            <button class="icon-btn" title="ערוך" onclick="openEdit(${row.id})">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
+            <button class="icon-btn del" title="מחק" onclick="openDelete(${row.id}, '${esc(row.name)}')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6"/><path d="M14 11v6"/>
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Totals row
+    const totBuy   = data.reduce((s, r) => s + (+r.buyTotal  || 0), 0);
+    const totSell  = data.reduce((s, r) => s + (+r.sellTotal || 0), 0);
+    const totComm  = data.reduce((s, r) => s + (+r.buyComm   || 0) + (+r.sellComm || 0), 0);
+    const totTax   = data.reduce((s, r) => s + calc(r).tax, 0);
+    const totNet   = data.reduce((s, r) => s + calc(r).net, 0);
+
+    tfoot.innerHTML = `
+      <tr>
+        <td colspan="5" class="total-label">סה"כ</td>
+        <td class="num">${totBuy.toLocaleString('he-IL', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+        <td class="num">${totSell.toLocaleString('he-IL', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+        <td class="num" colspan="2">${totComm.toLocaleString('he-IL', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+        <td class="num tax-cell">${totTax.toLocaleString('he-IL', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+        <td class="num profit-cell ${totNet >= 0 ? 'positive' : 'negative'}">${totNet.toLocaleString('he-IL', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+        <td></td>
+      </tr>
+    `;
+
+    updateSummary(data);
+  }
+
+  function updateSummary(data) {
+    const totBuy  = data.reduce((s, r) => s + (+r.buyTotal  || 0), 0);
+    const totSell = data.reduce((s, r) => s + (+r.sellTotal || 0), 0);
+    const totTax  = data.reduce((s, r) => s + calc(r).tax, 0);
+    const totNet  = data.reduce((s, r) => s + calc(r).net, 0);
+
+    const f = n => n.toLocaleString('he-IL', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+    document.getElementById('sumBuy').textContent    = data.length ? f(totBuy)  : '—';
+    document.getElementById('sumSell').textContent   = data.length ? f(totSell) : '—';
+    document.getElementById('sumTax').textContent    = data.length ? f(totTax)  : '—';
+
+    const profitEl = document.getElementById('sumProfit');
+    profitEl.textContent = data.length ? f(totNet) : '—';
+    profitEl.className = 'card-value' + (data.length ? (totNet >= 0 ? ' positive' : ' negative') : '');
+  }
+
+  // ── Modal: Add / Edit ─────────────────────────────
+  function openAdd() {
+    document.getElementById('editId').value = '';
+    document.getElementById('stockForm').reset();
+    document.getElementById('f_buyDate').value = new Date().toISOString().split('T')[0];
+    updatePreview();
+    document.getElementById('modalTitle').textContent = 'הוסף מנייה';
+    document.getElementById('saveBtn').textContent = 'שמור';
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementById('f_name').focus();
+  }
+
+  function openEdit(id) {
+    const data = load();
+    const row = data.find(r => r.id === id);
+    if (!row) return;
+
+    document.getElementById('editId').value = id;
+    document.getElementById('f_name').value     = row.name;
+    document.getElementById('f_currency').value = row.currency;
+    document.getElementById('f_buyDate').value  = row.buyDate;
+    document.getElementById('f_buyRate').value  = row.buyRate  || '';
+    document.getElementById('f_sellRate').value = row.sellRate || '';
+    document.getElementById('f_buyTotal').value = row.buyTotal;
+    document.getElementById('f_sellTotal').value = row.sellTotal;
+    document.getElementById('f_buyComm').value  = row.buyComm  || 0;
+    document.getElementById('f_sellComm').value = row.sellComm || 0;
+    updatePreview();
+    document.getElementById('modalTitle').textContent = 'ערוך מנייה';
+    document.getElementById('saveBtn').textContent = 'עדכן';
+    document.getElementById('overlay').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('overlay').style.display = 'none';
+  }
+
+  document.getElementById('overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('overlay')) closeModal();
+  });
+
+  // ── Live preview in form ──────────────────────────
+  ['f_buyTotal','f_sellTotal','f_buyComm','f_sellComm'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updatePreview);
+  });
+
+  function updatePreview() {
+    const buyTotal  = +document.getElementById('f_buyTotal').value  || 0;
+    const sellTotal = +document.getElementById('f_sellTotal').value || 0;
+    const buyComm   = +document.getElementById('f_buyComm').value   || 0;
+    const sellComm  = +document.getElementById('f_sellComm').value  || 0;
+
+    const gross     = sellTotal - buyTotal;
+    const totalComm = buyComm + sellComm;
+    const taxable   = gross - totalComm;
+    const tax       = taxable > 0 ? taxable * 0.25 : 0;
+    const net       = taxable - tax;
+
+    const f = n => n.toLocaleString('he-IL', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+    const gEl = document.getElementById('prev_gross');
+    const nEl = document.getElementById('prev_net');
+
+    gEl.textContent = buyTotal || sellTotal ? f(gross) : '—';
+    gEl.className = 'val' + (gross > 0 ? ' pos' : gross < 0 ? ' neg' : '');
+
+    document.getElementById('prev_comm').textContent = totalComm ? f(totalComm) : '—';
+    document.getElementById('prev_tax').textContent  = tax > 0   ? f(tax)       : '—';
+
+    nEl.textContent = buyTotal || sellTotal ? f(net) : '—';
+    nEl.className = 'val' + (net > 0 ? ' pos' : net < 0 ? ' neg' : '');
+  }
+
+  // ── Form submit ───────────────────────────────────
+  document.getElementById('stockForm').addEventListener('submit', e => {
+    e.preventDefault();
+
+    const name     = document.getElementById('f_name').value.trim();
+    const buyTotal = document.getElementById('f_buyTotal').value;
+    const sellTotal= document.getElementById('f_sellTotal').value;
+
+    if (!name)          { showToast('נא למלא שם מנייה', 'err'); return; }
+    if (!buyTotal)      { showToast('נא למלא מחיר קנייה', 'err'); return; }
+    if (!sellTotal)     { showToast('נא למלא מחיר מכירה', 'err'); return; }
+    if (!document.getElementById('f_buyDate').value) {
+      showToast('נא למלא תאריך קנייה', 'err'); return;
+    }
+
+    const data = load();
+    const idVal = document.getElementById('editId').value;
+
+    const entry = {
+      id:       idVal ? parseInt(idVal) : Date.now(),
+      name,
+      currency: document.getElementById('f_currency').value,
+      buyDate:  document.getElementById('f_buyDate').value,
+      buyRate:  document.getElementById('f_buyRate').value  || null,
+      sellRate: document.getElementById('f_sellRate').value || null,
+      buyTotal: +buyTotal,
+      sellTotal:+sellTotal,
+      buyComm:  +document.getElementById('f_buyComm').value  || 0,
+      sellComm: +document.getElementById('f_sellComm').value || 0,
+    };
+
+    if (idVal) {
+      const idx = data.findIndex(r => r.id === entry.id);
+      if (idx !== -1) data[idx] = entry;
+      showToast('המנייה עודכנה', 'ok');
+    } else {
+      data.push(entry);
+      showToast('המנייה נוספה', 'ok');
+    }
+
+    save(data);
+    render();
+    closeModal();
+  });
+
+  // ── Delete ────────────────────────────────────────
+  let pendingDeleteId = null;
+
+  function openDelete(id, name) {
+    pendingDeleteId = id;
+    document.getElementById('deleteStockName').textContent = name;
+    document.getElementById('deleteOverlay').style.display = 'flex';
+  }
+
+  function closeDelete() {
+    document.getElementById('deleteOverlay').style.display = 'none';
+    pendingDeleteId = null;
+  }
+
+  document.getElementById('deleteOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('deleteOverlay')) closeDelete();
+  });
+
+  document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+    if (!pendingDeleteId) return;
+    const data = load().filter(r => r.id !== pendingDeleteId);
+    save(data);
+    render();
+    closeDelete();
+    showToast('המנייה נמחקה', 'ok');
+  });
+
+  // ── Export CSV ────────────────────────────────────
+  function exportCSV() {
+    const data = load();
+    if (!data.length) { showToast('אין נתונים לייצוא', 'err'); return; }
+
+    const headers = ['שם המנייה','מטבע','תאריך קנייה','שער קנייה','שער מכירה',
+                     'מחיר קנייה','מחיר מכירה','עמלת קנייה','עמלת מכירה',
+                     'מס הכנסה 25%','רווח נקי'];
+
+    const rows = data.map(r => {
+      const { tax, net } = calc(r);
+      return [r.name, r.currency, r.buyDate, r.buyRate||'', r.sellRate||'',
+              r.buyTotal, r.sellTotal, r.buyComm||0, r.sellComm||0,
+              tax.toFixed(2), net.toFixed(2)];
+    });
+
+    const csv = '﻿' + [headers, ...rows]
+      .map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))
+      .join('\n');
+
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'ohad-demri-stocks.csv';
+    a.click();
+    showToast('הקובץ יורד...', 'ok');
+  }
+
+  // ── Toast ─────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg, type = '') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = 'toast'; }, 2800);
+  }
+
+  // ── Utils ─────────────────────────────────────────
+  function esc(str) {
+    return String(str ?? '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+  }
+
+  // ── Init ──────────────────────────────────────────
+  render();
+</script>
+</body>
+</html>
