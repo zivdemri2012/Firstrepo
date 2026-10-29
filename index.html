@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>טרטוריה בלה לונה | מטבח איטלקי אותנטי</title>
+  <meta name="description" content="טרטוריה בלה לונה: פסטה בעבודת יד, פיצה מתנור עצים ומתכונים משפחתיים מטוסקנה.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Heebo:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <header class="site-header" id="header">
+    <div class="container nav-wrap">
+      <a href="#home" class="logo">בלה <span>לונה</span></a>
+      <button class="nav-toggle" id="navToggle" aria-label="פתיחת תפריט ניווט" aria-expanded="false" aria-controls="navMenu">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav" id="navMenu" aria-label="ניווט ראשי">
+        <a href="#about">אודות</a>
+        <a href="#menu">תפריט</a>
+        <a href="#gallery">גלריה</a>
+        <a href="#contact">צור קשר</a>
+        <a href="#reserve" class="btn btn-small">הזמנת שולחן</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero" id="home">
+      <div class="hero-content">
+        <p class="eyebrow">מאז 1987</p>
+        <h1>טרטוריה בלה לונה</h1>
+        <p class="tagline">פסטה בעבודת יד, פיצה מתנור עצים והמתכונים של סבתא. הכול טרי, כל יום.</p>
+        <div class="hero-actions">
+          <a href="#menu" class="btn">לתפריט</a>
+          <a href="#reserve" class="btn btn-outline">הזמנת שולחן</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- About -->
+    <section class="section about reveal" id="about">
+      <div class="container about-grid">
+        <div class="about-text">
+          <p class="eyebrow">הסיפור שלנו</p>
+          <h2>פינה קטנה של טוסקנה</h2>
+          <p>בלה לונה התחילה כטרטוריה קטנה עם שנים־עשר שולחנות, בניהול משפחת רוסי. שלושה דורות אחר כך, אנחנו עדיין מרדדים את הפסטה ביד כל בוקר. העגבניות שלנו עדיין מגיעות מסן מרצאנו, והפיצה עדיין נאפית בתנור עצים בחום של 400 מעלות.</p>
+          <p>בואו רעבים, תישארו עד מאוחר, ותצאו כמו בני משפחה.</p>
+        </div>
+        <ul class="features">
+          <li>
+            <span class="feature-icon" aria-hidden="true">🍝</span>
+            <h3>פסטה טרייה</h3>
+            <p>מוכנה בעבודת יד כל בוקר במטבח שלנו.</p>
+          </li>
+          <li>
+            <span class="feature-icon" aria-hidden="true">🔥</span>
+            <h3>תנור עצים</h3>
+            <p>פיצה בסגנון נפוליטני, נאפית תוך 90 שניות.</p>
+          </li>
+          <li>
+            <span class="feature-icon" aria-hidden="true">👵</span>
+            <h3>מתכונים משפחתיים</h3>
+            <p>מנות שעברו מדור לדור, כבר שלושה דורות.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Menu -->
+    <section class="section menu reveal" id="menu">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">מהמטבח שלנו</p>
+          <h2>התפריט שלנו</h2>
+          <p class="menu-note">כל המחירים בשקלים חדשים וכוללים מע״מ.</p>
+        </div>
+
+        <div class="menu-tabs" role="tablist" aria-label="קטגוריות בתפריט">
+          <button class="tab active" data-filter="all" role="tab" aria-selected="true">הכול</button>
+          <button class="tab" data-filter="antipasti" role="tab" aria-selected="false">ראשונות</button>
+          <button class="tab" data-filter="pasta" role="tab" aria-selected="false">פסטות</button>
+          <button class="tab" data-filter="pizza" role="tab" aria-selected="false">פיצות</button>
+          <button class="tab" data-filter="secondi" role="tab" aria-selected="false">עיקריות</button>
+          <button class="tab" data-filter="dolci" role="tab" aria-selected="false">קינוחים</button>
+        </div>
+
+        <div class="menu-grid" id="menuGrid">
+          <article class="dish" data-category="antipasti">
+            <img src="images/bruschetta.jpg" alt="ברוסקטה עגבניות" loading="lazy" width="600" height="450">
+            <div class="dish-body">
+              <div class="dish-head"><h3>ברוסקטה עגבניות</h3><span class="price">38 ₪</span></div>
+              <p>לחם מחמצת קלוי, עגבניות שרי, שום, בזיליקום ושמן זית כתית מעולה.</p>
+            </div>
+          </article>
+          <article class="dish" data-category="antipasti">
+            <img src="images/burrata.jpg" alt="בוראטה" loading="lazy" width="600" height="450">
+            <div class="dish-body">
+              <div class="dish-head"><h3>בוראטה פולייזה</h3><span class="price">58 ₪</span></div>
+              <p>בוראטה קרמית, עגבניות שרי צלויות, פסטו וצנוברים קלויים.</p>
+            </div>
+          </article>
+          <article class="dish" data-category="antipasti">
+            <img src="images/arancini.jpg" alt="ארנצ׳יני" loading="lazy" width="600" height="450">
+            <div class="dish-body">
+              <div class="dish-head"><h3>ארנצ׳יני סיציליאני</h3><span class="price">44 ₪</span></div>
+              <p>כדורי ריזוטו פריכים במילוי מוצרלה וראגו, לצד רוטב מרינרה.</p>
+            </div>
+          </article>
+
+          <article class="dish" data-category="pasta">
+            <img src="images/tagliatelle-ragu.jpg" alt="טליאטלה ראגו" loading="lazy" width="600" height="450">
+            <div class="dish-body">
+              <div class="dish-head"><h3>טליאטלה ראגו</h3><span class="price">72 ₪</span></div>
+              <p>פסטת ביצים בחיתוך ידני, ראגו בולונז של בקר וחזיר בבישול איטי.</p>
+            </div>
+          </article>
+          <article class="dish" data-category="pasta">
+            <img src="images/carbonara.jpg" alt="ספגטי קרבונרה" loading="lazy" width="600" height="450">
+            <div class="dish-body">
+              <div class="dish-head"><h3>ספגטי קרבונרה</h3><span class="price">68 ₪</span></div>
+              <p>גואנצ׳לה, חלמון, פקורינו רומנו ופלפל שחור גרוס. בלי שמנת, אף פעם.</p>
+            </div>
+          </article>
+          <article class="dish" data-category="pasta">
+            <img src="images/cacio-e-pepe.jpg" alt="קאצ׳ו א פפה" loading="lazy" width="600" height="450">
+            <div class="dish-body">
+              <div class="dish-head"><h3>קאצ׳ו א פפה</h3><span class="price">62 ₪</span></div>
+              <p>טונרלי, פקורינו רומנו ופלפל טליצ׳רי קלוי.</p>
+            </div>
+          </article>
+          <article class="dish" data-category="pasta">
+            <img src="images/ravioli.jpg" alt="רביולי ריקוטה" loading="lazy" width="600" height="450">
+            <div class="dish-body">
+              <div class="dish-head"><h3>רביולי ריקוטה</h3><span class="price">74 ₪</span></div>
+              <p>רביולי במילוי ריקוטה ותרד, חמאה חומה עם מרווה ופרמזן.</p>
+            </div>
+          </article>
+
+          <article class="dish" data-category="pizza">
+            <img src="images/margherita.jpg" alt="פיצה מרגריטה" loading="lazy" width="600" height="450">
+            <div class="dish-body">
+              <div class="dish-head"><h3>מרגריטה</h3><span class="price">56 ₪</span></div>
+              <p>עגבניות סן מרצאנו, פיור די לאטה, בזיליקום ושמן זית.</p>
+            </div>
+          </article>
+          <article class="dish" data-category="pizza">
+            <img src="images/diavola.jpg" alt="פיצה דיאבולה" loading="lazy" width="600" height="450">
+            <div class="dish-body">
+              <div class="dish-head"><h3>דיאבולה</h3><span class="price">64 ₪</span></div>
+              <p>עגבניות, מוצרלה, סלמי חריף, צ׳ילי קלבריה ודבש חריף.</p>
+            </div>
+          </article>
+          <article class="dish" data-category="pizza">
+            <img src="images/quattro-formaggi.jpg" alt="פיצה ארבע גבינות" loading="lazy" width="600" height="450">
+            <div class="dish-body">
+              <div class="dish-head"><h3>קוואטרו פורמאג׳י</h3><span class="price">68 ₪</span></div>
+              <p>מוצרלה, גורגונזולה, פונטינה ופרמזן. בלי רוטב עגבניות.</p>
+            </div>
+          </article>
+
+          <article class="dish" data-category="secondi">
+            <img src="images/osso-buco.jpg" alt="אוסובוקו" loading="lazy" width="600" height="450">
+            <div class="dish-body">
+              <div class="dish-head"><h3>אוסובוקו</h3><span class="price">128 ₪</span></div>
+              <p>שוק עגל בבישול ארוך, ריזוטו זעפרן וגרמולטה.</p>
+            </div>
+          </article>
+          <article class="dish" data-category="secondi">
+            <img src="images/branzino.jpg" alt="לברק בתנור" loading="lazy" width="600" height="450">
+            <div class="dish-body">
+              <div class="dish-head"><h3>לברק בתנור</h3><span class="price">112 ₪</span></div>
+              <p>לברק שלם צלוי בתנור, לימון, צלפים ותפוחי אדמה צלויים.</p>
+            </div>
+          </article>
+          <article class="dish" data-category="secondi">
+            <img src="images/cacciatora.jpg" alt="עוף קצ׳טורה" loading="lazy" width="600" height="450">
+            <div class="dish-body">
+              <div class="dish-head"><h3>עוף קצ׳טורה</h3><span class="price">89 ₪</span></div>
+              <p>עוף בסגנון הצייד, מבושל עם עגבניות, זיתים ורוזמרין.</p>
+            </div>
+          </article>
+
+          <article class="dish" data-category="dolci">
+            <img src="images/tiramisu.jpg" alt="טירמיסו" loading="lazy" width="600" height="450">
+            <div class="dish-body">
+              <div class="dish-head"><h3>טירמיסו</h3><span class="price">39 ₪</span></div>
+              <p>בישקוטים, אספרסו, מסקרפונה וקקאו. המתכון של סבתא.</p>
+            </div>
+          </article>
+          <article class="dish" data-category="dolci">
+            <img src="images/panna-cotta.jpg" alt="פנה קוטה" loading="lazy" width="600" height="450">
+            <div class="dish-body">
+              <div class="dish-head"><h3>פנה קוטה</h3><span class="price">36 ₪</span></div>
+              <p>פנה קוטה וניל עם רוטב פירות יער.</p>
+            </div>
+          </article>
+          <article class="dish" data-category="dolci">
+            <img src="images/cannoli.jpg" alt="קנולי" loading="lazy" width="600" height="450">
+            <div class="dish-body">
+              <div class="dish-head"><h3>קנולי סיציליאני</h3><span class="price">34 ₪</span></div>
+              <p>גלילים פריכים, ריקוטה מתוקה, פיסטוקים ושבבי שוקולד.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gallery -->
+    <section class="section gallery reveal" id="gallery">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">רגעים מהטרטוריה</p>
+          <h2>טעימה מבלה לונה</h2>
+        </div>
+        <div class="gallery-grid">
+          <figure class="tile tile-1"><img src="images/margherita.jpg" alt="פיצה מרגריטה מתנור עצים" loading="lazy"><figcaption>פיצה מתנור עצים</figcaption></figure>
+          <figure class="tile tile-2"><img src="images/bg/antipasti-board.jpg" alt="מגש נקניקים וגבינות איטלקיים" loading="lazy"><figcaption>מגש אנטיפסטי</figcaption></figure>
+          <figure class="tile tile-3"><img src="images/carbonara.jpg" alt="ספגטי קרבונרה" loading="lazy"><figcaption>פסטה טרייה</figcaption></figure>
+          <figure class="tile tile-4"><img src="images/bg/roman-street.jpg" alt="שולחנות טרטוריה ברחוב ברומא" loading="lazy"><figcaption>האווירה של רומא</figcaption></figure>
+          <figure class="tile tile-5"><img src="images/bg/tuscan-hills.jpg" alt="גבעות טוסקנה בשקיעה" loading="lazy"><figcaption>ההשראה שלנו: טוסקנה</figcaption></figure>
+          <figure class="tile tile-6"><img src="images/cannoli.jpg" alt="קנולי סיציליאני" loading="lazy"><figcaption>קינוחים ביתיים</figcaption></figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- Reservation -->
+    <section class="section reserve reveal" id="reserve">
+      <div class="container reserve-wrap">
+        <div class="reserve-intro">
+          <p class="eyebrow">שמרו לכם מקום</p>
+          <h2>הזמנת שולחן</h2>
+          <p>אנחנו פתוחים בימים ראשון עד שישי, 11:00–23:00 (הושבה אחרונה ב־22:00), וסגורים בשבת. ניתן להזמין שולחן לעד 12 סועדים. לקבוצות גדולות או לאירועים פרטיים, התקשרו אלינו: <a href="tel:+97235551234">03-555-1234</a>.</p>
+        </div>
+
+        <form class="reserve-form" id="reserveForm" novalidate>
+          <div class="field">
+            <label for="name">שם מלא</label>
+            <input type="text" id="name" name="name" autocomplete="name" required>
+            <small class="error" aria-live="polite"></small>
+          </div>
+          <div class="field">
+            <label for="email">אימייל</label>
+            <input type="email" id="email" name="email" autocomplete="email" dir="ltr" required>
+            <small class="error" aria-live="polite"></small>
+          </div>
+          <div class="field">
+            <label for="phone">טלפון</label>
+            <input type="tel" id="phone" name="phone" autocomplete="tel" dir="ltr" required>
+            <small class="error" aria-live="polite"></small>
+          </div>
+          <div class="field">
+            <label for="guests">מספר סועדים</label>
+            <select id="guests" name="guests" required>
+              <option value="">בחירה</option>
+            </select>
+            <small class="error" aria-live="polite"></small>
+          </div>
+          <div class="field">
+            <label for="date">תאריך</label>
+            <input type="date" id="date" name="date" required>
+            <small class="error" aria-live="polite"></small>
+          </div>
+          <div class="field">
+            <label for="time">שעה</label>
+            <input type="time" id="time" name="time" min="11:00" max="22:00" step="900" required>
+            <small class="error" aria-live="polite"></small>
+          </div>
+          <div class="field field-full">
+            <label for="notes">בקשות מיוחדות <span class="optional">(לא חובה)</span></label>
+            <textarea id="notes" name="notes" rows="3" placeholder="אלרגיות, ימי הולדת, העדפות ישיבה…"></textarea>
+          </div>
+          <button type="submit" class="btn field-full">שליחת בקשת הזמנה</button>
+          <p class="form-success field-full" id="formSuccess" role="status" hidden></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="section contact reveal" id="contact">
+      <div class="container contact-grid">
+        <div>
+          <h3>איפה אנחנו</h3>
+          <p>רחוב דיזנגוף 128<br>תל אביב־יפו</p>
+        </div>
+        <div>
+          <h3>צור קשר</h3>
+          <p><a href="tel:+97235551234" dir="ltr">03-555-1234</a><br><a href="mailto:ciao@bellaluna.example">ciao@bellaluna.example</a></p>
+        </div>
+        <div>
+          <h3>שעות פתיחה</h3>
+          <ul class="hours">
+            <li><span>ראשון – שישי</span><span>11:00 – 23:00</span></li>
+            <li><span>שבת</span><span>סגור</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-wrap">
+      <p>&copy; <span id="year"></span> טרטוריה בלה לונה. נעשה באהבה. <a href="CREDITS.md" class="credits-link">קרדיט לתמונות</a></p>
+      <div class="social">
+        <a href="#" aria-label="אינסטגרם">אינסטגרם</a>
+        <a href="#" aria-label="פייסבוק">פייסבוק</a>
+        <a href="#" aria-label="טריפאדוויזר">טריפאדוויזר</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
