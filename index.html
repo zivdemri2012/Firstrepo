@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מחאה על הדמוקרטיה</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Secular+One&display=swap">
+<style>
+  :root{
+    --bg:#0d1230;
+    --panel:#182050;
+    --line:#2a347a;
+    --fg:#eef1ff;
+    --muted:#a3abd6;
+    --blue:#3b74ff;
+    --display:"Secular One","Rubik",Arial,sans-serif;
+    --body:"Rubik",Arial,sans-serif;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);line-height:1.55}
+  .wrap{max-width:1060px;margin:0 auto;padding:28px max(16px,env(safe-area-inset-right)) 48px max(16px,env(safe-area-inset-left));display:grid;gap:18px}
+  .eyebrow{font-size:13px;color:var(--muted);letter-spacing:.04em}
+  h1{font-family:var(--display);font-weight:400;font-size:clamp(28px,5vw,46px);line-height:1.1;margin:4px 0 0}
+  .lead{margin:6px 0 0;color:var(--muted);max-width:60ch}
+  .stage{position:relative;aspect-ratio:1000/560;border-radius:14px;overflow:hidden;border:1px solid var(--line);cursor:pointer;background:#1c2252}
+  .stage img,.stage svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #crowd text{direction:rtl;font-family:var(--display)}
+  #dim{transition:opacity .6s}
+  .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  button{font:500 15px var(--body);color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:9px 18px;cursor:pointer}
+  button:hover{background:#222c6a}
+  button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  button.main{background:var(--blue);border-color:var(--blue);color:#fff}
+  button[aria-pressed="true"]{background:#fff3c4;color:#2a2200;border-color:#fff3c4}
+  .count{margin-inline-start:auto;display:flex;gap:14px;flex-wrap:wrap;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .count b{color:var(--fg)}
+  .hint{margin:0;font-size:13px;color:var(--muted)}
+  @media (max-width:560px){.count{margin-inline-start:0;width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">מוצאי שבת · צומת מרכזי בעיר</div>
+    <h1>יוצאים להפגין למען הדמוקרטיה</h1>
+    <p class="lead">מפגינים עם דגלים, שלטים ותופים צועדים בכביש. אפשר להוסיף עוד אנשים, להפעיל את התופים או להדליק פנסים בטלפונים.</p>
+  </header>
+
+  <div class="stage" id="stage" title="לחיצה מוסיפה מפגין">
+    <img src="scene.svg" alt="">
+    <svg id="crowd" viewBox="0 0 1000 560" aria-label="אנימציה: מפגינים ישראלים צועדים למען הדמוקרטיה"></svg>
+  </div>
+
+  <div class="bar">
+    <button id="add" type="button">עוד מפגין</button>
+    <button id="drums" type="button" class="main">תופים!</button>
+    <button id="flash" type="button" aria-pressed="false">פנסים בטלפונים</button>
+    <button id="pause" type="button">השהה</button>
+    <div class="count" aria-live="polite">
+      <span>לפי המשטרה: <b id="police">0</b></span>
+      <span>לפי המארגנים: <b id="org">0</b></span>
+    </div>
+  </div>
+  <p class="hint">אפשר גם ללחוץ על הכביש כדי להוסיף מפגין.</p>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
