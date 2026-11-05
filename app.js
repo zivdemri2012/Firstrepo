@@ -1,34 +1,25 @@
 (() => {
-  const NS = 'http://www.w3.org/2000/svg';
-  const svg = document.getElementById('crowd');
-  const W = 1000;
+  const cv = document.getElementById('crowd');
+  const ctx = cv.getContext('2d');
+  const W = 1000, H = 560, TAU = Math.PI * 2;
+  const FONT = '"Secular One", Rubik, Arial, sans-serif';
+  const MAX = 400;
 
   const rand = (a, b) => a + Math.random() * (b - a);
   const pick = a => a[Math.floor(Math.random() * a.length)];
-  function el(tag, attrs = {}, parent) {
-    const e = document.createElementNS(NS, tag);
-    for (const k in attrs) e.setAttribute(k, attrs[k]);
-    if (parent) parent.appendChild(e);
-    return e;
-  }
-  const setLine = (l, x1, y1, x2, y2) => {
-    l.setAttribute('x1', x1); l.setAttribute('y1', y1);
-    l.setAttribute('x2', x2); l.setAttribute('y2', y2);
-  };
-  const setPos = (c, x, y) => { c.setAttribute('cx', x); c.setAttribute('cy', y); };
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-  /* ---------- layers ---------- */
-  const defs = el('defs', {}, svg);
-  const glow = el('filter', { id: 'phoneGlow', x: '-100%', y: '-100%', width: '300%', height: '300%' }, defs);
-  el('feGaussianBlur', { stdDeviation: 5 }, glow);
-  const dim = el('rect', { id: 'dim', width: 1000, height: 560, fill: '#000', opacity: 0 }, svg);
-  const L = {
-    shadows: el('g', {}, svg),
-    people: el('g', {}, svg),
-    banners: el('g', {}, svg),
-    bubbles: el('g', {}, svg),
-    fx: el('g', {}, svg),
-  };
+  /* ---------- canvas sizing ---------- */
+  let K = 1;
+  function resize() {
+    const r = cv.getBoundingClientRect();
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.max(1, Math.round(r.width * dpr));
+    cv.height = Math.max(1, Math.round(r.height * dpr));
+    K = cv.width / W;
+  }
+  new ResizeObserver(resize).observe(cv);
+  resize();
 
   /* ---------- content ---------- */
   const SIGNS = [
@@ -45,245 +36,307 @@
   const HATS = ['hair', 'hair', 'curly', 'cap', 'tembel', 'tembel', 'bald'];
   const ITEMS = ['sign', 'sign', 'sign', 'sign', 'flag', 'flag', 'flag', 'drum', 'megaphone'];
 
+  const PATH = {
+    beard: new Path2D('M-9,-93 Q-7,-80 5,-81 Q13,-83 13,-91 Q8,-87 3,-88 Q-3,-88 -9,-93Z'),
+    hair: new Path2D('M-13.6,-99 A13.6,13.6 0 0 1 13.4,-101 Q4,-106 -13.6,-99Z'),
+    cap: new Path2D('M-13.5,-101 A13.5,13.5 0 0 1 13.5,-101 Z'),
+    tembel: new Path2D('M-11,-104 Q-11,-117 0,-117 Q11,-117 11,-104 Z'),
+    mega: new Path2D('M16,-95 L16,-87 L44,-78 L44,-104Z'),
+    zig: new Path2D('M-14,-6 L-7,10 L0,-6 L7,10 L14,-6'),
+    star1: new Path2D('M25,10 L31,20.5 L19,20.5Z'),
+    star2: new Path2D('M25,24 L31,13.5 L19,13.5Z'),
+  };
+  const CURLS = [[-11, -103], [-5, -110], [3, -111], [10, -106], [-13, -96]];
+
   /* ---------- state ---------- */
-  let people = [];
+  const people = [];
+  const banners = [];
   let bubbles = [];
-  let boost = 1, bigT = 0, T = 0, flash = false;
+  let boost = 1, bigT = 0, T = 0, flash = false, dimA = 0, waveX = null, drummers = 0;
   let running = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ---------- person construction ---------- */
-  function flagShape(parent) {
-    const g = el('g', {}, parent);
-    el('rect', { width: 50, height: 34, fill: '#f7f7fb', stroke: '#c9cde0', 'stroke-width': 0.8 }, g);
-    el('rect', { y: 3.5, width: 50, height: 5, fill: '#2457c5' }, g);
-    el('rect', { y: 25.5, width: 50, height: 5, fill: '#2457c5' }, g);
-    const star = { fill: 'none', stroke: '#2457c5', 'stroke-width': 1.6, 'stroke-linejoin': 'round' };
-    el('polygon', Object.assign({ points: '25,10 31,20.5 19,20.5' }, star), g);
-    el('polygon', Object.assign({ points: '25,24 31,13.5 19,13.5' }, star), g);
-    return g;
+  /* ---------- drawing helpers ---------- */
+  function line(x1, y1, x2, y2, color, w) {
+    ctx.strokeStyle = color; ctx.lineWidth = w;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  }
+  function circle(x, y, r, color) {
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+  }
+  function ellipse(x, y, rx, ry, color) {
+    ctx.fillStyle = color; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, TAU); ctx.fill();
+  }
+  const phoneGlow = document.createElement('canvas');
+  phoneGlow.width = phoneGlow.height = 72;
+  {
+    const g = phoneGlow.getContext('2d');
+    const gr = g.createRadialGradient(36, 36, 0, 36, 36, 36);
+    gr.addColorStop(0, 'rgba(255,246,207,.95)');
+    gr.addColorStop(0.45, 'rgba(255,246,207,.55)');
+    gr.addColorStop(1, 'rgba(255,246,207,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 72, 72);
   }
 
+  /* ---------- cached sign images & text widths ---------- */
+  const signCache = new Map();
+  const widthCache = new Map();
+  const SK = 3;
+  function signSprite(p) {
+    const key = p.sign + '|' + p.board + '|' + p.ink;
+    let c = signCache.get(key);
+    if (c) return c;
+    const lines = p.sign.split('\n');
+    ctx.save(); ctx.font = `16px ${FONT}`;
+    let mw = 1;
+    lines.forEach(t => { mw = Math.max(mw, ctx.measureText(t).width); });
+    ctx.restore();
+    const fs = Math.min(19, 16 * 84 / mw), lh = fs * 1.1, bh = lines.length * lh + 12, pad = 2;
+    const cvs = document.createElement('canvas');
+    cvs.width = Math.ceil((96 + pad * 2) * SK); cvs.height = Math.ceil((bh + pad * 2) * SK);
+    const g = cvs.getContext('2d');
+    g.scale(SK, SK); g.translate(pad, pad);
+    g.fillStyle = p.board; g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 1.5;
+    g.beginPath(); g.roundRect(0, 0, 96, bh, 3); g.fill(); g.stroke();
+    g.fillStyle = p.ink; g.font = `${fs.toFixed(1)}px ${FONT}`;
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.direction = 'rtl';
+    lines.forEach((t, i) => g.fillText(t, 48, 6 + lh * (i + 0.5)));
+    c = { cvs, x: -48 - pad, y: -bh - pad, w: 96 + pad * 2, h: bh + pad * 2 };
+    signCache.set(key, c);
+    return c;
+  }
+  function textWidth(text, size) {
+    const key = size + '|' + text;
+    let w = widthCache.get(key);
+    if (w === undefined) {
+      ctx.save(); ctx.font = `${size}px ${FONT}`; w = ctx.measureText(text).width; ctx.restore();
+      widthCache.set(key, w);
+    }
+    return w;
+  }
+
+  /* ---------- person construction ---------- */
   function makePerson(x, opts = {}) {
     const depth = opts.depth ?? Math.random();
-    const p = {
+    const shirt = pick(SHIRTS);
+    const hat = pick(HATS);
+    return {
       x, depth, y: 440 + depth * 95, s: 0.8 + depth * 0.5,
       speed: opts.speed ?? rand(18, 30), phase: rand(0, 6.28),
       item: opts.item ?? pick(ITEMS),
-      skin: pick(SKINS), hair: pick(HAIR), shirt: pick(SHIRTS), pants: pick(PANTS), hat: pick(HATS),
+      skin: pick(SKINS), hair: pick(HAIR), pants: pick(PANTS), hat,
+      shirtCol: shirt === 'flag' ? '#f4f6fb' : shirt,
+      sleeve: shirt === 'flag' ? '#2457c5' : shirt,
+      flagShirt: shirt === 'flag',
+      hatCol: hat === 'cap' ? pick(['#2457c5', '#1b1b1f', '#f4f6fb']) : pick(['#e9e2c8', '#d8c9a0', '#9bb4e8']),
       beard: Math.random() < 0.3, glasses: Math.random() < 0.3,
       sign: pick(SIGNS), board: pick(['#ffffff', '#f4efe2', '#dfe8ff']), ink: pick(['#1d3fa6', '#16182a', '#1d3fa6']),
-      jumpT: 0, jumpDelay: -1, nextBubble: rand(0.5, 8), bubble: null,
-      hand: { x: 0, y: 0 }, bodyY: 0, P: {},
+      jumpT: 0, jumpDelay: -1, cheer: false, waved: false,
+      nextBubble: rand(0.5, 8), bubble: null,
+      hand: { x: 0, y: 0 }, bodyY: 0, jy: 0, a: 0, hx: 0, hy: 0, bx: 0, by: 0,
     };
-    build(p);
+  }
+
+  function insertPerson(p) {
+    let i = people.findIndex(q => q.y > p.y);
+    if (i < 0) i = people.length;
+    people.splice(i, 0, p);
+    if (p.item === 'drum') drummers++;
     return p;
   }
 
-  function build(p) {
-    const P = p.P;
-    p.shadow = el('ellipse', { fill: 'rgba(0,0,0,.35)' }, L.shadows);
-    const g = p.g = el('g', {});
-    const next = people.find(q => q.y > p.y);
-    if (next) L.people.insertBefore(g, next.g); else L.people.appendChild(g);
-
-    const shirtCol = p.shirt === 'flag' ? '#f4f6fb' : p.shirt;
-    const sleeve = p.shirt === 'flag' ? '#2457c5' : shirtCol;
-    const limb = (color, w) => el('line', { stroke: color, 'stroke-width': w, 'stroke-linecap': 'round' }, g);
-
-    P.legB = limb(p.pants, 10); P.shoeB = el('ellipse', { rx: 8, ry: 4, fill: '#141418' }, g);
-    P.armB = limb(sleeve, 8); P.handB = el('circle', { r: 4.5, fill: p.skin }, g);
-    P.phone = el('g', { visibility: 'hidden' }, g);
-    el('circle', { cy: -8, r: 12, fill: '#fff6cf', opacity: 0.9, filter: 'url(#phoneGlow)' }, P.phone);
-    el('rect', { x: -4, y: -8, width: 8, height: 13, rx: 1.5, fill: '#222' }, P.phone);
-    el('circle', { cy: -5, r: 2.2, fill: '#fff' }, P.phone);
-    P.legF = limb(p.pants, 10); P.shoeF = el('ellipse', { rx: 8, ry: 4, fill: '#141418' }, g);
-
-    el('rect', { x: -14, y: -84, width: 28, height: 44, rx: 7, fill: shirtCol }, g);
-    if (p.shirt === 'flag') {
-      el('rect', { x: -14, y: -78, width: 28, height: 4, fill: '#2457c5' }, g);
-      el('rect', { x: -14, y: -52, width: 28, height: 4, fill: '#2457c5' }, g);
-    }
-
-    // head
-    el('circle', { cx: 0, cy: -98, r: 13, fill: p.skin }, g);
-    if (p.beard) el('path', { d: 'M-9,-93 Q-7,-80 5,-81 Q13,-83 13,-91 Q8,-87 3,-88 Q-3,-88 -9,-93Z', fill: p.hair }, g);
-    if (p.hat === 'hair') el('path', { d: 'M-13.6,-99 A13.6,13.6 0 0 1 13.4,-101 Q4,-106 -13.6,-99Z', fill: p.hair }, g);
-    else if (p.hat === 'curly') {
-      [[-11, -103], [-5, -110], [3, -111], [10, -106], [-13, -96]].forEach(([cx, cy]) => el('circle', { cx, cy, r: 5.5, fill: p.hair }, g));
-    } else if (p.hat === 'cap') {
-      const c = pick(['#2457c5', '#1b1b1f', '#f4f6fb']);
-      el('path', { d: 'M-13.5,-101 A13.5,13.5 0 0 1 13.5,-101 Z', fill: c }, g);
-      el('ellipse', { cx: 15, cy: -101, rx: 9, ry: 2.6, fill: c }, g);
-    } else if (p.hat === 'tembel') {
-      const c = pick(['#e9e2c8', '#d8c9a0', '#9bb4e8']);
-      el('path', { d: 'M-11,-104 Q-11,-117 0,-117 Q11,-117 11,-104 Z', fill: c }, g);
-      el('ellipse', { cx: 0, cy: -104, rx: 17, ry: 4, fill: c }, g);
-    }
-    el('circle', { cx: 6, cy: -100.5, r: 1.8, fill: '#16161a' }, g);
-    el('line', { x1: 2, y1: -106, x2: 9.5, y2: -105, stroke: '#16161a', 'stroke-width': 1.6, 'stroke-linecap': 'round' }, g);
-    el('circle', { cx: 13, cy: -97.5, r: 3.5, fill: p.skin }, g);
-    if (p.glasses) {
-      el('circle', { cx: 6, cy: -100.5, r: 4.5, fill: 'none', stroke: '#16161a', 'stroke-width': 1.3 }, g);
-      el('line', { x1: 1.5, y1: -100.5, x2: -9, y2: -101.5, stroke: '#16161a', 'stroke-width': 1.3 }, g);
-    }
-    P.mouthC = el('line', { x1: 5, y1: -89, x2: 10, y2: -89.5, stroke: '#5a1a1a', 'stroke-width': 1.4, 'stroke-linecap': 'round' }, g);
-    P.mouthO = el('ellipse', { cx: 8.5, cy: -89, rx: 3.4, ry: 4.2, fill: '#5a1a1a', visibility: 'hidden' }, g);
-
-    // items
-    P.item = el('g', {}, g);
-    if (p.item === 'sign') {
-      el('line', { x1: 0, y1: 16, x2: 0, y2: -44, stroke: '#8a6a43', 'stroke-width': 4, 'stroke-linecap': 'round' }, P.item);
-      P.board = el('g', {}, P.item);
-      P.boardRect = el('rect', { x: -48, width: 96, rx: 3, fill: p.board, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.5 }, P.board);
-      P.lines = p.sign.split('\n').map(t => {
-        const tx = el('text', { x: 0, 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: p.ink }, P.board);
-        tx.textContent = t;
-        return tx;
-      });
-      fitSign(p);
-    } else if (p.item === 'flag' || p.item === 'banner') {
-      const len = p.item === 'flag' ? -62 : -42;
-      el('line', { x1: 0, y1: 16, x2: 0, y2: len, stroke: '#8a6a43', 'stroke-width': 3, 'stroke-linecap': 'round' }, P.item);
-      if (p.item === 'flag') P.flag = flagShape(P.item);
-    } else if (p.item === 'drum') {
-      P.drum = el('g', { transform: 'translate(16 -56)' }, g);
-      el('rect', { x: -14, y: -8, width: 28, height: 20, fill: '#c8323c' }, P.drum);
-      el('path', { d: 'M-14,-6 L-7,10 L0,-6 L7,10 L14,-6', fill: 'none', stroke: '#f2d58a', 'stroke-width': 1.5 }, P.drum);
-      el('ellipse', { cx: 0, cy: 12, rx: 14, ry: 4, fill: '#a52630' }, P.drum);
-      el('ellipse', { cx: 0, cy: -8, rx: 14, ry: 4, fill: '#f3efe4', stroke: '#c9c2ad' }, P.drum);
-      P.stickB = el('line', { stroke: '#d9b77a', 'stroke-width': 2.5, 'stroke-linecap': 'round' }, g);
-      P.stickF = el('line', { stroke: '#d9b77a', 'stroke-width': 2.5, 'stroke-linecap': 'round' }, g);
-      g.insertBefore(P.drum, P.item);
-    } else if (p.item === 'megaphone') {
-      P.mega = el('g', {}, g);
-      el('polygon', { points: '16,-95 16,-87 44,-78 44,-104', fill: '#efefef', stroke: '#555', 'stroke-width': 1.5 }, P.mega);
-      el('rect', { x: 38, y: -102, width: 4, height: 22, fill: '#2457c5' }, P.mega);
-    }
-    P.armF = limb(sleeve, 8); P.handF = el('circle', { r: 4.5, fill: p.skin }, g);
-    if (P.mega) g.appendChild(P.mega);
-  }
-
-  function fitSign(p) {
-    const P = p.P, bw = 96;
-    P.lines.forEach(t => t.setAttribute('font-size', 16));
-    let mw = 1;
-    P.lines.forEach(t => { try { mw = Math.max(mw, t.getComputedTextLength()); } catch (e) {} });
-    const fs = Math.min(19, 16 * (bw - 12) / mw), lh = fs * 1.1, bh = P.lines.length * lh + 12;
-    P.boardRect.setAttribute('y', -bh); P.boardRect.setAttribute('height', bh);
-    P.lines.forEach((t, i) => { t.setAttribute('font-size', fs.toFixed(1)); t.setAttribute('y', (-bh + 6 + lh * (i + 0.5)).toFixed(1)); });
-  }
-
   /* ---------- banner pair ---------- */
-  const banners = [];
   function addBannerPair(x) {
     const depth = 0.5, speed = 23;
-    const a = makePerson(x, { depth, speed, item: 'banner' }); people.push(a);
-    const b = makePerson(x + 190 * a.s, { depth, speed, item: 'banner' }); people.push(b);
+    const a = insertPerson(makePerson(x, { depth, speed, item: 'banner' }));
+    const b = insertPerson(makePerson(x + 190 * a.s, { depth, speed, item: 'banner' }));
     a.bannerWith = b; b.follower = true;
-    const g = el('g', {}, L.banners);
-    const path = el('path', { fill: '#f7f7fb', stroke: '#2457c5', 'stroke-width': 5 }, g);
-    const text = el('text', { 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: '#2457c5' }, g);
-    text.textContent = 'דמוקרטיה';
-    banners.push({ a, b, path, text });
+    banners.push({ a, b });
   }
 
-  /* ---------- per-frame ---------- */
-  function renderPerson(p) {
-    const P = p.P, s = p.s, a = Math.sin(p.phase) * 0.5;
+  /* ---------- per-frame pose ---------- */
+  function pose(p) {
+    const s = p.s, a = p.a = Math.sin(p.phase) * 0.5;
     const bob = Math.abs(Math.cos(p.phase)) * 2.5;
-    const jy = p.jumpT > 0 ? Math.sin(Math.PI * (1 - p.jumpT / 0.6)) * 30 : 0;
+    const jy = p.jy = p.jumpT > 0 ? Math.sin(Math.PI * (1 - p.jumpT / 0.6)) * 30 : 0;
     p.bodyY = p.y - (bob + jy) * s;
-    p.g.setAttribute('transform', `translate(${p.x.toFixed(1)} ${p.bodyY.toFixed(1)}) scale(${s.toFixed(3)})`);
-    const k = 1 - jy / 90;
-    setPos(p.shadow, (p.x + 2 * s).toFixed(1), p.y + 1);
-    p.shadow.setAttribute('rx', (19 * s * k).toFixed(1)); p.shadow.setAttribute('ry', (5 * s * k).toFixed(1));
-
-    const leg = (ln, shoe, sgn) => {
-      const ex = Math.sin(a * sgn) * 40, ey = -42 + Math.cos(a * sgn) * 40;
-      setLine(ln, 0, -44, ex.toFixed(1), ey.toFixed(1)); setPos(shoe, (ex + 4).toFixed(1), (ey + 1).toFixed(1));
-    };
-    leg(P.legB, P.shoeB, -1); leg(P.legF, P.shoeF, 1);
+    const cheer = p.cheer && p.jumpT > 0;
 
     const wave = Math.sin(T * 4 + p.phase) * 4;
     let hx = 14, hy = -114 + wave;
     if (p.item === 'megaphone') { hx = 18; hy = -90; }
     if (p.item === 'banner') { hx = 12; hy = -112; }
-    const beat = Math.abs(Math.sin(T * (bigT > 0 ? 16 : 9) + p.phase));
+    const beat = p.beat = Math.abs(Math.sin(T * (bigT > 0 ? 16 : 9) + p.phase));
     if (p.item === 'drum') { hx = 22; hy = -80 + beat * 10; }
+    if (cheer && (p.item === 'sign' || p.item === 'flag')) hy -= 10;
 
-    // back arm
     let bx, by;
-    if (flash) { bx = -6; by = -124 + Math.sin(T * 2 + p.phase) * 3; }
+    if (cheer) { bx = -10; by = -126; }
+    else if (flash) { bx = -6; by = -124 + Math.sin(T * 2 + p.phase) * 3; }
     else if (p.item === 'banner' || p.item === 'flag') { bx = hx - 7; by = hy + 10; }
     else if (p.item === 'drum') { bx = 8; by = -78 + (1 - beat) * 10; }
     else { const ba = -a * 0.9; bx = -4 + Math.sin(ba) * 30; by = -78 + Math.cos(ba) * 30; }
-    setLine(P.armB, -4, -78, bx.toFixed(1), by.toFixed(1)); setPos(P.handB, bx.toFixed(1), by.toFixed(1));
-    P.phone.setAttribute('visibility', flash ? 'visible' : 'hidden');
-    if (flash) P.phone.setAttribute('transform', `translate(${bx.toFixed(1)} ${(by - 4).toFixed(1)})`);
 
-    setLine(P.armF, 6, -78, hx.toFixed(1), hy.toFixed(1)); setPos(P.handF, hx.toFixed(1), hy.toFixed(1));
-    if (p.item === 'drum') {
-      setLine(P.stickF, hx, hy, hx - 4, hy + 13);
-      setLine(P.stickB, bx, by, bx + 6, by + 13);
-    } else {
-      P.item.setAttribute('transform', `translate(${hx.toFixed(1)} ${hy.toFixed(1)})`);
-    }
-    if (P.board) P.board.setAttribute('transform', `translate(0 -44) rotate(${(Math.sin(T * 2.6 + p.phase) * 4).toFixed(2)})`);
-    if (P.flag) P.flag.setAttribute('transform', `translate(1 -60) skewY(${(Math.sin(T * 5 + p.phase) * 9).toFixed(2)}) scale(${(0.92 + Math.sin(T * 5 + p.phase + 1) * 0.08).toFixed(3)} 1)`);
-
-    const shouting = !!p.bubble;
-    P.mouthO.setAttribute('visibility', shouting ? 'visible' : 'hidden');
-    P.mouthC.setAttribute('visibility', shouting ? 'hidden' : 'visible');
+    p.hx = hx; p.hy = hy; p.bx = bx; p.by = by;
     p.hand.x = p.x + hx * s; p.hand.y = p.bodyY + hy * s;
   }
 
-  function renderBanner(bn) {
+  const visible = p => p.x > -140 && p.x < W + 140;
+
+  function drawShadow(p) {
+    const s = p.s, k = 1 - p.jy / 90;
+    ellipse(p.x + 2 * s, p.y + 1, 19 * s * k, 5 * s * k, 'rgba(0,0,0,.35)');
+  }
+
+  function drawPerson(p) {
+    const { a, hx, hy, bx, by } = p;
+    ctx.save();
+    ctx.translate(p.x, p.bodyY); ctx.scale(p.s, p.s);
+
+    const leg = sgn => {
+      const ex = Math.sin(a * sgn) * 40, ey = -42 + Math.cos(a * sgn) * 40;
+      line(0, -44, ex, ey, p.pants, 10);
+      ellipse(ex + 4, ey + 1, 8, 4, '#141418');
+    };
+
+    leg(-1);
+    line(-4, -78, bx, by, p.sleeve, 8);
+    circle(bx, by, 4.5, p.skin);
+    if (flash) {
+      ctx.save(); ctx.translate(bx, by - 4);
+      ctx.drawImage(phoneGlow, -18, -26, 36, 36);
+      ctx.fillStyle = '#222'; ctx.beginPath(); ctx.roundRect(-4, -8, 8, 13, 1.5); ctx.fill();
+      circle(0, -5, 2.2, '#fff');
+      ctx.restore();
+    }
+    leg(1);
+
+    // torso
+    ctx.fillStyle = p.shirtCol; ctx.beginPath(); ctx.roundRect(-14, -84, 28, 44, 7); ctx.fill();
+    if (p.flagShirt) {
+      ctx.fillStyle = '#2457c5'; ctx.fillRect(-14, -78, 28, 4); ctx.fillRect(-14, -52, 28, 4);
+    }
+
+    // head
+    circle(0, -98, 13, p.skin);
+    if (p.beard) { ctx.fillStyle = p.hair; ctx.fill(PATH.beard); }
+    if (p.hat === 'hair') { ctx.fillStyle = p.hair; ctx.fill(PATH.hair); }
+    else if (p.hat === 'curly') CURLS.forEach(([cx, cy]) => circle(cx, cy, 5.5, p.hair));
+    else if (p.hat === 'cap') { ctx.fillStyle = p.hatCol; ctx.fill(PATH.cap); ellipse(15, -101, 9, 2.6, p.hatCol); }
+    else if (p.hat === 'tembel') { ctx.fillStyle = p.hatCol; ctx.fill(PATH.tembel); ellipse(0, -104, 17, 4, p.hatCol); }
+    circle(6, -100.5, 1.8, '#16161a');
+    line(2, -106, 9.5, -105, '#16161a', 1.6);
+    circle(13, -97.5, 3.5, p.skin);
+    if (p.glasses) {
+      ctx.strokeStyle = '#16161a'; ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.arc(6, -100.5, 4.5, 0, TAU); ctx.stroke();
+      line(1.5, -100.5, -9, -101.5, '#16161a', 1.3);
+    }
+    if (p.bubble || (p.cheer && p.jumpT > 0)) ellipse(8.5, -89, 3.4, 4.2, '#5a1a1a');
+    else line(5, -89, 10, -89.5, '#5a1a1a', 1.4);
+
+    // items
+    if (p.item === 'drum') {
+      ctx.save(); ctx.translate(16, -56);
+      ctx.fillStyle = '#c8323c'; ctx.fillRect(-14, -8, 28, 20);
+      ctx.strokeStyle = '#f2d58a'; ctx.lineWidth = 1.5; ctx.stroke(PATH.zig);
+      ellipse(0, 12, 14, 4, '#a52630');
+      ellipse(0, -8, 14, 4, '#f3efe4');
+      ctx.strokeStyle = '#c9c2ad'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.restore();
+      line(hx, hy, hx - 4, hy + 13, '#d9b77a', 2.5);
+      line(bx, by, bx + 6, by + 13, '#d9b77a', 2.5);
+    } else if (p.item !== 'megaphone') {
+      ctx.save(); ctx.translate(hx, hy);
+      if (p.item === 'sign') {
+        line(0, 16, 0, -44, '#8a6a43', 4);
+        ctx.translate(0, -44); ctx.rotate(Math.sin(T * 2.6 + p.phase) * 4 * Math.PI / 180);
+        const c = signSprite(p);
+        ctx.drawImage(c.cvs, c.x, c.y, c.w, c.h);
+      } else {
+        line(0, 16, 0, p.item === 'flag' ? -62 : -42, '#8a6a43', 3);
+        if (p.item === 'flag') drawFlag(p);
+      }
+      ctx.restore();
+    }
+
+    line(6, -78, hx, hy, p.sleeve, 8);
+    circle(hx, hy, 4.5, p.skin);
+    if (p.item === 'megaphone') {
+      ctx.fillStyle = '#efefef'; ctx.fill(PATH.mega);
+      ctx.strokeStyle = '#555'; ctx.lineWidth = 1.5; ctx.stroke(PATH.mega);
+      ctx.fillStyle = '#2457c5'; ctx.fillRect(38, -102, 4, 22);
+    }
+    ctx.restore();
+  }
+
+  function drawFlag(p) {
+    const skew = Math.sin(T * 5 + p.phase) * 9 * Math.PI / 180;
+    ctx.translate(1, -60);
+    ctx.transform(1, Math.tan(skew), 0, 1, 0, 0);
+    ctx.scale(0.92 + Math.sin(T * 5 + p.phase + 1) * 0.08, 1);
+    ctx.fillStyle = '#f7f7fb'; ctx.fillRect(0, 0, 50, 34);
+    ctx.strokeStyle = '#c9cde0'; ctx.lineWidth = 0.8; ctx.strokeRect(0, 0, 50, 34);
+    ctx.fillStyle = '#2457c5'; ctx.fillRect(0, 3.5, 50, 5); ctx.fillRect(0, 25.5, 50, 5);
+    ctx.strokeStyle = '#2457c5'; ctx.lineWidth = 1.6;
+    ctx.stroke(PATH.star1); ctx.stroke(PATH.star2);
+  }
+
+  function drawBanner(bn) {
     const A = bn.a.hand, B = bn.b.hand, s = bn.a.s;
     const t1 = A.y - 40 * s, t2 = B.y - 40 * s, h = 32 * s, sag = 6 * s, mx = (A.x + B.x) / 2, my = (t1 + t2) / 2;
-    const f = v => v.toFixed(1);
-    bn.path.setAttribute('d', `M${f(A.x)},${f(t1)} Q${f(mx)},${f(my + sag)} ${f(B.x)},${f(t2)} L${f(B.x)},${f(t2 + h)} Q${f(mx)},${f(my + h + sag)} ${f(A.x)},${f(t1 + h)} Z`);
-    bn.path.setAttribute('stroke-width', f(4 * s));
-    bn.text.setAttribute('x', f(mx)); bn.text.setAttribute('y', f(my + h / 2 + sag * 0.5));
-    bn.text.setAttribute('font-size', f(22 * s));
+    ctx.beginPath();
+    ctx.moveTo(A.x, t1); ctx.quadraticCurveTo(mx, my + sag, B.x, t2);
+    ctx.lineTo(B.x, t2 + h); ctx.quadraticCurveTo(mx, my + h + sag, A.x, t1 + h);
+    ctx.closePath();
+    ctx.fillStyle = '#f7f7fb'; ctx.fill();
+    ctx.strokeStyle = '#2457c5'; ctx.lineWidth = 4 * s; ctx.stroke();
+    ctx.fillStyle = '#2457c5'; ctx.font = `${(22 * s).toFixed(1)}px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'rtl';
+    ctx.fillText('דמוקרטיה', mx, my + h / 2 + sag * 0.5);
   }
 
   /* ---------- speech bubbles ---------- */
   function say(p, text, big = false, life = 2.2) {
-    if (p.bubble) { p.bubble.g.remove(); bubbles = bubbles.filter(b => b !== p.bubble); }
-    const g = el('g', {}, L.bubbles);
-    const rect = el('rect', { rx: 10, fill: '#fff', stroke: '#16182a', 'stroke-width': 2 }, g);
-    const tail = el('path', { fill: '#fff', stroke: '#16182a', 'stroke-width': 2, 'stroke-linejoin': 'round' }, g);
-    const cover = el('rect', { height: 4, fill: '#fff' }, g);
-    const tx = el('text', { 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': big ? 18 : 15, fill: big ? '#1d3fa6' : '#16182a' }, g);
-    tx.textContent = text;
-    let tw = 60; try { tw = tx.getComputedTextLength(); } catch (e) {}
-    const b = { p, g, rect, tail, cover, tx, w: tw + 20, h: big ? 30 : 26, life, max: life };
+    if (p.bubble) bubbles = bubbles.filter(b => b !== p.bubble);
+    const size = big ? 18 : 15;
+    const b = { p, text, big, size, w: textWidth(text, size) + 20, h: big ? 30 : 26, life, max: life };
     p.bubble = b; bubbles.push(b);
   }
-  function renderBubble(b) {
+  function drawBubble(b) {
     const p = b.p, s = p.s;
     const mx = p.x + 12 * s, my = p.bodyY - 92 * s;
-    let bx = mx + 16, by = my - 34 - b.h;
+    let bx = mx + 16;
+    const by = my - 34 - b.h;
     if (bx + b.w > W - 4) bx = W - 4 - b.w;
     const tx = Math.min(Math.max(bx + 8, mx), bx + b.w - 22);
-    b.rect.setAttribute('x', bx); b.rect.setAttribute('y', by); b.rect.setAttribute('width', b.w); b.rect.setAttribute('height', b.h);
-    b.tail.setAttribute('d', `M${tx},${by + b.h} L${mx + 4},${my - 6} L${tx + 13},${by + b.h}`);
-    b.cover.setAttribute('x', tx + 1.5); b.cover.setAttribute('y', by + b.h - 3); b.cover.setAttribute('width', 10);
-    b.tx.setAttribute('x', bx + b.w / 2); b.tx.setAttribute('y', by + b.h / 2 + 1);
-    b.g.setAttribute('opacity', Math.max(0, Math.min(1, b.life / 0.3, (b.max - b.life) / 0.12)).toFixed(2));
+    ctx.globalAlpha = clamp(Math.min(b.life / 0.3, (b.max - b.life) / 0.12), 0, 1);
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = '#16182a'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.roundRect(bx, by, b.w, b.h, 10); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(tx, by + b.h); ctx.lineTo(mx + 4, my - 6); ctx.lineTo(tx + 13, by + b.h);
+    ctx.fill(); ctx.stroke();
+    ctx.fillRect(tx + 1.5, by + b.h - 3, 10, 4);
+    ctx.fillStyle = b.big ? '#1d3fa6' : '#16182a';
+    ctx.font = `${b.size}px ${FONT}`;
+    ctx.fillText(b.text, bx + b.w / 2, by + b.h / 2 + 1);
+    ctx.globalAlpha = 1;
   }
-
-  /* ---------- big chant overlay ---------- */
-  const big = el('text', { x: 500, y: 110, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 96, fill: '#3b74ff', stroke: '#fff', 'stroke-width': 8, 'paint-order': 'stroke', 'stroke-linejoin': 'round', opacity: 0 }, L.fx);
-  big.textContent = 'דמוקרטיה!';
 
   /* ---------- update ---------- */
   function update(dt) {
     boost = Math.max(1, boost - dt * 0.35);
     if (bigT > 0) bigT -= dt;
-    let talking = bubbles.filter(b => b.h < 30).length;
+    let talking = 0;
+    for (const b of bubbles) if (!b.big) talking++;
 
-    people.forEach(p => {
+    if (waveX !== null) {
+      waveX -= 650 * dt;
+      for (const p of people) {
+        if (!p.waved && p.x >= waveX) { p.waved = true; p.cheer = true; p.jumpT = 0.6; p.jumpDelay = -1; }
+      }
+      if (waveX < -200) waveX = null;
+    }
+
+    for (const p of people) {
       p.x += p.speed * p.s * boost * dt;
       p.phase += dt * (p.speed / 6) * boost;
       if (!p.follower && p.x > W + 100) {
@@ -291,84 +344,186 @@
         p.x -= shift; if (p.bannerWith) p.bannerWith.x -= shift;
       }
       if (p.jumpDelay > 0) { p.jumpDelay -= dt; if (p.jumpDelay <= 0) { p.jumpT = 0.6; p.jumpDelay = -1; } }
-      if (p.jumpT > 0) p.jumpT = Math.max(0, p.jumpT - dt);
+      if (p.jumpT > 0) { p.jumpT = Math.max(0, p.jumpT - dt); if (p.jumpT === 0) p.cheer = false; }
       p.nextBubble -= dt;
       if (!p.bubble && p.nextBubble <= 0 && p.x > 20 && p.x < W - 80) {
-        if (talking < 4) { say(p, pick(CHANTS)); talking++; }
+        if (talking < 5) { say(p, pick(CHANTS)); talking++; }
         p.nextBubble = p.item === 'megaphone' ? rand(1.5, 4) : rand(4, 10);
       }
-    });
+    }
 
     bubbles = bubbles.filter(b => {
       b.life -= dt;
-      if (b.life <= 0) { b.g.remove(); b.p.bubble = null; return false; }
+      if (b.life <= 0) { b.p.bubble = null; return false; }
       return true;
     });
   }
 
   function render() {
-    people.forEach(renderPerson);
-    banners.forEach(renderBanner);
-    bubbles.forEach(renderBubble);
+    ctx.setTransform(K, 0, 0, K, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    if (dimA > 0.005) { ctx.fillStyle = `rgba(0,0,0,${dimA.toFixed(3)})`; ctx.fillRect(0, 0, W, H); }
+
+    for (const p of people) pose(p);
+    for (const p of people) if (visible(p)) drawShadow(p);
+    for (const p of people) if (visible(p)) drawPerson(p);
+    for (const bn of banners) drawBanner(bn);
+
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'rtl';
+    for (const b of bubbles) drawBubble(b);
+
     if (bigT > 0) {
       const k = 1 - bigT / 2;
       const sc = k < 0.12 ? 0.5 + (k / 0.12) * 0.65 : 1.15 - Math.min(0.15, (k - 0.12) * 0.6);
-      big.setAttribute('opacity', (bigT < 0.5 ? bigT / 0.5 : 1).toFixed(2));
-      big.setAttribute('transform', `translate(500 110) rotate(-3) scale(${sc.toFixed(3)}) translate(-500 -110)`);
-    } else big.setAttribute('opacity', 0);
+      ctx.save();
+      ctx.globalAlpha = bigT < 0.5 ? bigT / 0.5 : 1;
+      ctx.translate(500, 110); ctx.rotate(-3 * Math.PI / 180); ctx.scale(sc, sc);
+      ctx.font = `96px ${FONT}`;
+      ctx.lineWidth = 8; ctx.strokeStyle = '#fff'; ctx.strokeText('דמוקרטיה!', 0, 0);
+      ctx.fillStyle = '#3b74ff'; ctx.fillText('דמוקרטיה!', 0, 0);
+      ctx.restore();
+    }
   }
 
+  /* ---------- sound: synthesized drums ---------- */
+  let audio = null, master = null, noiseBuf = null, soundOn = false;
+  let nextBeat = 0, step = 0, rollUntil = 0;
+  function initAudio() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    audio = new AC();
+    master = audio.createGain(); master.gain.value = 0.45; master.connect(audio.destination);
+    noiseBuf = audio.createBuffer(1, audio.sampleRate * 0.3, audio.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    return true;
+  }
+  function kick(t, v) {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.25);
+    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    o.connect(g).connect(master); o.start(t); o.stop(t + 0.4);
+  }
+  function snare(t, v) {
+    const n = audio.createBufferSource(), f = audio.createBiquadFilter(), g = audio.createGain();
+    n.buffer = noiseBuf; f.type = 'highpass'; f.frequency.value = 1400;
+    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    n.connect(f).connect(g).connect(master); n.start(t); n.stop(t + 0.15);
+  }
+  // "דֶּ-מוֹ-קְרַטְ-יָה" rhythm: dum, dum, dum-dum-dum, rest
+  const PATTERN = ['K', 'S', 'K', 'S', 'K', 'K', 'K', '-'];
+  function scheduleAudio() {
+    if (!audio || !soundOn || !running) return;
+    const now = audio.currentTime;
+    if (nextBeat < now) nextBeat = now + 0.05;
+    const v = Math.min(1, 0.4 + drummers * 0.06);
+    while (nextBeat < now + 0.15) {
+      const t = nextBeat;
+      if (t < rollUntil) {
+        snare(t, 0.45);
+        if (step % 4 === 0) kick(t, 0.9);
+        nextBeat += 0.0625;
+      } else {
+        const hit = PATTERN[step % PATTERN.length];
+        if (hit === 'K') kick(t, v);
+        else if (hit === 'S') snare(t, v * 0.5);
+        nextBeat += 0.25;
+      }
+      step++;
+    }
+  }
+
+  /* ---------- loop ---------- */
   let last = performance.now();
   function frame(now) {
-    let dt = Math.min(0.05, (now - last) / 1000); last = now;
-    if (!running) dt = 0;
-    if (dt > 0) { T += dt; update(dt); }
+    const real = Math.min(0.05, (now - last) / 1000); last = now;
+    const target = flash ? 0.35 : 0;
+    dimA += (target - dimA) * Math.min(1, real * 5);
+    if (running && real > 0) { T += real; update(real); }
+    scheduleAudio();
     render();
     requestAnimationFrame(frame);
   }
 
   /* ---------- controls ---------- */
   const fmt = new Intl.NumberFormat('he-IL');
+  const addBtn = document.getElementById('add');
+  const add10Btn = document.getElementById('add10');
   function updateCount() {
     document.getElementById('police').textContent = fmt.format(people.length);
     document.getElementById('org').textContent = fmt.format(people.length * 9871 + 1948);
+    const full = people.length >= MAX;
+    addBtn.disabled = full; add10Btn.disabled = full;
   }
   function addOne() {
-    if (people.length >= 48) return;
-    const p = makePerson(-50 - rand(0, 60));
-    people.push(p);
+    if (people.length >= MAX) return;
+    const p = insertPerson(makePerson(-50 - rand(0, 60)));
     say(p, pick(['הגעתי!', 'חכו לי!', 'איפה החניה?']), false, 1.8);
     updateCount();
   }
+  function addMany(n) {
+    const count = Math.min(n, MAX - people.length);
+    let first = null;
+    for (let i = 0; i < count; i++) {
+      const p = insertPerson(makePerson(-50 - rand(0, 380)));
+      if (!first || p.x > first.x) first = p;
+    }
+    if (first) say(first, 'הבאנו את כל השכונה!', false, 2);
+    updateCount();
+  }
   function drums() {
-    people.forEach(p => {
+    const onScreen = people.filter(p => p.x > 20 && p.x < W - 80);
+    for (let i = onScreen.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1)); [onScreen[i], onScreen[j]] = [onScreen[j], onScreen[i]];
+    }
+    const talkers = new Set(onScreen.slice(0, 14));
+    for (const p of people) {
       p.jumpDelay = rand(0.01, 0.35);
-      say(p, pick(['דמוקרטיה!', 'דמוקרטיה!', 'לא נוותר!']), true);
+      if (talkers.has(p)) say(p, pick(['דמוקרטיה!', 'דמוקרטיה!', 'לא נוותר!']), true);
       p.nextBubble = rand(3, 7);
-    });
+    }
     bigT = 2; boost = 2.2;
+    if (audio && soundOn) rollUntil = audio.currentTime + 1.6;
+    if (!running) togglePause();
+  }
+  function startWave() {
+    for (const p of people) p.waved = false;
+    waveX = W + 150;
     if (!running) togglePause();
   }
   const pauseBtn = document.getElementById('pause');
   function togglePause() { running = !running; pauseBtn.textContent = running ? 'השהה' : 'הפעל'; }
   pauseBtn.textContent = running ? 'השהה' : 'הפעל';
 
-  document.getElementById('add').addEventListener('click', addOne);
+  const soundBtn = document.getElementById('sound');
+  soundBtn.addEventListener('click', () => {
+    if (!audio && !initAudio()) { soundBtn.disabled = true; return; }
+    soundOn = !soundOn;
+    if (soundOn) audio.resume();
+    soundBtn.setAttribute('aria-pressed', String(soundOn));
+  });
+
+  addBtn.addEventListener('click', addOne);
+  add10Btn.addEventListener('click', () => addMany(10));
   document.getElementById('stage').addEventListener('click', addOne);
   document.getElementById('drums').addEventListener('click', drums);
+  document.getElementById('wave').addEventListener('click', startWave);
   pauseBtn.addEventListener('click', togglePause);
   const flashBtn = document.getElementById('flash');
   flashBtn.addEventListener('click', () => {
     flash = !flash;
     flashBtn.setAttribute('aria-pressed', String(flash));
-    dim.setAttribute('opacity', flash ? 0.35 : 0);
   });
 
   /* ---------- start ---------- */
   const starters = ['flag', 'sign', 'drum', 'sign', 'flag', 'megaphone', 'sign', 'flag', 'sign', 'drum'];
-  starters.forEach((it, i) => people.push(makePerson(-80 + i * 110 + rand(-20, 20), { item: it })));
+  starters.forEach((it, i) => insertPerson(makePerson(-80 + i * 110 + rand(-20, 20), { item: it })));
   addBannerPair(360);
   updateCount();
-  if (document.fonts) document.fonts.ready.then(() => people.forEach(p => { if (p.P.board) fitSign(p); }));
+  if (document.fonts) document.fonts.ready.then(() => {
+    signCache.clear(); widthCache.clear();
+    for (const b of bubbles) b.w = textWidth(b.text, b.size) + 20;
+  });
   requestAnimationFrame(frame);
 })();
