@@ -97,9 +97,8 @@ def manual_login(settings: Settings, source: str, start_url: str,
     target = session_path(settings, source)
     with sync_playwright() as p:
         browser = _launch(p, headless=False)
+        # Always a fresh login: a restored session can leave some sites half-logged-in.
         ctx_kw: dict[str, Any] = {"locale": "he-IL", "timezone_id": settings.timezone}
-        if target.is_file():
-            ctx_kw["storage_state"] = str(target)
         context = browser.new_context(**ctx_kw)
         page = context.new_page()
         page.goto(start_url)
