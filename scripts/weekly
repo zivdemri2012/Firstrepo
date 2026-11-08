@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Weekly Recap launcher. Usage:  weekly recap [options]
+# Symlinked into ~/.local/bin by scripts/install.sh. Works without Claude Code.
+set -euo pipefail
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
+PY="$ROOT/.venv/bin/python"
+
+if [[ "${1:-}" != "recap" ]]; then
+  echo "שימוש: weekly recap [--demo] [--login mashov|classroom|galim] [--status] [--stop] [--help]" >&2
+  exit 2
+fi
+if [[ ! -x "$PY" ]]; then
+  echo "הסביבה הווירטואלית חסרה. הריצו: $ROOT/scripts/install.sh" >&2
+  exit 1
+fi
+cd "$ROOT"
+exec env PYTHONPATH="$ROOT" "$PY" -m weekly_recap.cli "$@"

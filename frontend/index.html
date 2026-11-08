@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Weekly Recap · הסיכום השבועי</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f6bed'/%3E%3Cpath d='M9 17l4 4 10-10' stroke='white' stroke-width='3.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div id="demo-banner" class="demo-banner" hidden>
+    <strong>⚠ נתוני דמה</strong>
+    <span>כל המידע בעמוד הזה בדיוני ונועד לבדיקת העיצוב בלבד. הוא לא נאסף מהחשבונות שלך.</span>
+  </div>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" /></svg>
+        </div>
+        <div>
+          <h1>הסיכום השבועי</h1>
+          <p class="subtitle" id="week-range">טוען…</p>
+        </div>
+      </div>
+      <div class="topbar-meta">
+        <div id="sources" class="sources" aria-label="מצב מקורות המידע"></div>
+        <span id="updated" class="updated"></span>
+        <button id="theme-toggle" class="icon-btn" type="button" aria-label="החלפת ערכת צבעים" title="מצב כהה / בהיר">
+          <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="app" class="container">
+    <div class="loading">טוען את הדוח…</div>
+  </main>
+
+  <footer class="footer container">
+    <span>Weekly Recap · הנתונים נשמרים מקומית במחשב שלך בלבד · צפייה בלבד, ללא הגשה או שליחה בשמך</span>
+  </footer>
+
+  <template id="tpl-empty">
+    <section class="card empty-state">
+      <h2>עדיין אין דוח</h2>
+      <p>הריצו בטרמינל <code>weekly recap</code> כדי לאסוף נתונים, או <code>weekly recap --demo</code> לתצוגה עם נתוני דמה.</p>
+    </section>
+  </template>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
