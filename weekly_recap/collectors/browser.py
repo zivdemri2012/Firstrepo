@@ -117,7 +117,7 @@ def manual_login(settings: Settings, source: str, start_url: str,
 
 
 def capture_session(settings: Settings, source: str, start_url: str, display_name: str,
-                    prompt: Callable[[str], str] = input) -> Path:
+                    prompt: Callable[[str], str] = input, fresh: bool = True) -> Path:
     """Calibration mode: user browses the relevant pages; we record the JSON the site loads.
 
     The capture is saved only locally (gitignored) and is used to build the
@@ -143,10 +143,30 @@ def capture_session(settings: Settings, source: str, start_url: str, display_nam
         try:
             if "json" in resp.headers.get("content-type", "") and resp.request.method == "GET":
                 pending.append(resp)
+            elif resp.status >= 400 and resp.request.resource_type in ("xhr", "fetch"):
+                failures.append({"meta": "http_error", "url": resp.url, "type": "fetch",
+                                 "error": f"HTTP {resp.status}"})
         except Exception:
             pass
 
+    def on_failed(req):
+        # Diagnostics only: which requests failed (URL path + error), no bodies.
+        try:
+            if req.resource_type in ("xhr", "fetch", "document"):
+                failures.append({"meta": "failed", "url": req.url, "type": req.resource_type,
+                                 "error": req.failure})
+        except Exception:
+            pass
+
+    failures: list[dict[str, Any]] = []
+
     def drain():
+        while failures:
+            rec = failures.pop(0)
+            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+            fh.flush()
+            path = re.sub(r"https?://[^/]+", "", rec["url"]).split("?")[0]
+            print(f"\n   ⚠️  בקשה נכשלה: {path} ({rec['error']})", end="", flush=True)
         # Written immediately, so nothing is lost if the window is closed.
         while pending:
             resp = pending.pop(0)
@@ -168,13 +188,17 @@ def capture_session(settings: Settings, source: str, start_url: str, display_nam
     with sync_playwright() as p:
         browser = _launch(p, headless=False)
         ctx_kw: dict[str, Any] = {"locale": "he-IL", "timezone_id": settings.timezone}
-        if target.is_file():
+        # Fresh by default: some sites keep part of the login in per-tab memory that a saved
+        # session cannot restore, so the user logs in and browses in the same window.
+        if target.is_file() and not fresh:
             ctx_kw["storage_state"] = str(target)
         context = browser.new_context(**ctx_kw)
         context.on("response", on_response)
+        context.on("requestfailed", on_failed)
         page = context.new_page()
         page.goto(start_url)
         print(f"\n🧭 מצב כיול ל-{display_name}.")
+        print("   קודם התחברו בחלון שנפתח (גם אם כבר התחברתם קודם).")
         print("   היכנסו בתפריט של האתר לכל עמוד רלוונטי (למשל: התנהגות, הודעות, ציונים,")
         print("   שיעורי בית / משימות), וחכו בכל עמוד כמה שניות. לא ללחוץ על 'שלח' או 'הגש'.")
         print("   על כל נתון שנקלט תופיע כאן שורה עם 📥 — כך רואים שזה עובד.")
