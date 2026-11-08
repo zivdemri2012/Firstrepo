@@ -158,6 +158,12 @@ def capture_session(settings: Settings, source: str, start_url: str, display_nam
             fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
             fh.flush()
             counter["n"] += 1
+            # Live feedback: endpoint path + item count only (no personal values).
+            path = re.sub(r"https?://[^/]+", "", resp.url).split("?")[0]
+            path = re.sub(r"[0-9a-fA-F-]{20,}", "…", path)
+            body = rec["body"]
+            size = f"{len(body)} פריטים" if isinstance(body, (list, dict)) else ""
+            print(f"\n   📥 [{counter['n']}] {path} {size}", end="", flush=True)
 
     with sync_playwright() as p:
         browser = _launch(p, headless=False)
@@ -168,8 +174,10 @@ def capture_session(settings: Settings, source: str, start_url: str, display_nam
         context.on("response", on_response)
         page = context.new_page()
         page.goto(start_url)
-        print(f"\n🧭 מצב כיול ל-{display_name}: היכנסו לעמודים הרלוונטיים (התנהגות, הודעות,")
-        print("   ציונים, שיעורי בית / משימות). לא ללחוץ על 'שלח' או 'הגש'.")
+        print(f"\n🧭 מצב כיול ל-{display_name}.")
+        print("   היכנסו בתפריט של האתר לכל עמוד רלוונטי (למשל: התנהגות, הודעות, ציונים,")
+        print("   שיעורי בית / משימות), וחכו בכל עמוד כמה שניות. לא ללחוץ על 'שלח' או 'הגש'.")
+        print("   על כל נתון שנקלט תופיע כאן שורה עם 📥 — כך רואים שזה עובד.")
         _wait_for_user(context, target, "   בסיום הקישו Enter כאן (או סגרו את החלון)... ",
                        on_tick=drain)
         drain()
