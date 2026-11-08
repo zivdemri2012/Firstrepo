@@ -11,7 +11,8 @@ from .database.db import Database, week_start_for
 from .models import CollectorResult
 from .pipeline import default_sources, make_collector, run_recap
 
-LOGIN_SOURCES = ("mashov", "classroom", "galim")
+LOGIN_SOURCES = ("mashov", "classroom", "cet", "classit", "galim")
+CAPTURE_SOURCES = ("mashov", "cet", "classit", "galim")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -26,7 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--no-collect", action="store_true", help="רק לפתוח את הדוח האחרון")
     ap.add_argument("--no-open", action="store_true", help="לא לפתוח את כרום")
     ap.add_argument("--login", choices=LOGIN_SOURCES, help="התחברות ידנית למקור ושמירת ההתחברות")
-    ap.add_argument("--capture", choices=("mashov", "galim"),
+    ap.add_argument("--capture", choices=CAPTURE_SOURCES,
                     help="מצב כיול: הקלטת מבנה הנתונים של האתר (מקומית בלבד)")
     ap.add_argument("--status", action="store_true", help="הצגת מצב המקורות")
     ap.add_argument("--stop", action="store_true", help="עצירת שרת הדשבורד ברקע")

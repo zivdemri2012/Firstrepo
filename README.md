@@ -1,6 +1,6 @@
 # Weekly Recap · הסיכום השבועי
 
-כלי אישי שמרכז מידע מבית הספר (משוב, Google Classroom, גלים פרו) ומציג דשבורד שבועי מקומי בעברית מלאה וב-RTL.
+כלי אישי שמרכז מידע מבית הספר (משוב, Google Classroom, לשון והבעה במט"ח, ClassIt במתמטיקה) ומציג דשבורד שבועי מקומי בעברית מלאה וב-RTL.
 
 ```bash
 weekly recap
@@ -24,8 +24,8 @@ sudo apt-get install -y libnss3 libnspr4   # פעם אחת, רק עבור איס
 | `weekly recap` | איסוף + פתיחת הדוח בכרום |
 | `weekly recap --demo` | תצוגה עם **נתוני דמה** (פרופיל נפרד, מסומן בפס צהוב) |
 | `weekly recap --no-collect` | פתיחת הדוח האחרון בלי לאסוף |
-| `weekly recap --login mashov\|classroom\|galim` | התחברות ידנית ושמירת ה-session מקומית |
-| `weekly recap --capture mashov\|galim` | מצב כיול: הקלטת מבנה הנתונים של האתר (מקומית בלבד) |
+| `weekly recap --login mashov\|classroom\|cet\|classit` | התחברות ידנית ושמירת ה-session מקומית |
+| `weekly recap --capture mashov\|cet\|classit` | מצב כיול: הקלטת מבנה הנתונים של האתר (מקומית בלבד) |
 | `weekly recap --status` | מצב המקורות והשרת |
 | `weekly recap --stop` | עצירת שרת הדשבורד |
 
@@ -34,7 +34,7 @@ sudo apt-get install -y libnss3 libnspr4   # פעם אחת, רק עבור איס
 * **Google Classroom**: דרך ה-API הרשמי, עם הרשאות קריאה בלבד וללא עלות.
   יוצרים OAuth client מסוג *Desktop app* ב-Google Cloud Console, מפעילים את Classroom API ושומרים את הקובץ כ-
   `data/profiles/default/secrets/classroom_client.json`. אחר כך מגדירים `CLASSROOM_ENABLED=true` ומריצים `weekly recap --login classroom`.
-* **משוב / גלים פרו**: מגדירים `MASHOV_URL` / `GALIM_URL` בקובץ `.env`. אחר כך:
+* **משוב / מט"ח (לשון והבעה) / ClassIt (מתמטיקה)**: מגדירים `MASHOV_URL` / `CET_URL` / `CLASSIT_URL` בקובץ `.env`. אחר כך:
   1. `weekly recap --login mashov`: נפתח חלון דפדפן ומתחברים **ידנית**. הכלי לא שומר סיסמאות ולא עוקף CAPTCHA או אימות דו-שלבי.
   2. `weekly recap --capture mashov`: נכנסים פעם אחת לעמודים הרלוונטיים כדי שהמפענח ייכתב לפי המבנה האמיתי של האתר, בלי ניחושים.
 
@@ -45,7 +45,7 @@ weekly_recap/
   collectors/        איסוף (מודול לכל אתר; @register + WR_SOURCES)
     base.py          ממשק Collector + רישום
     browser.py       Playwright: התחברות ידנית, session שמור, מצב כיול
-    mashov/ classroom/ galim/ demo/
+    mashov/ classroom/ cet/ classit/ galim/ demo/
   processing/        עיבוד: סיווג עברי, בניית הדוח והסיכום הטבעי
   database/db.py     SQLite: מניעת כפילויות, מעקב שינויים במשימות, היסטוריה שבועית
   server/app.py      FastAPI (127.0.0.1 בלבד)

@@ -14,7 +14,7 @@ from .processing.report import build_report, snapshot_values
 def default_sources(settings: Settings) -> list[str]:
     if settings.is_demo:
         return ["demo"]
-    raw = settings.get("WR_SOURCES", "mashov,classroom,galim")
+    raw = settings.get("WR_SOURCES", "mashov,classroom,cet,classit")
     return [s.strip() for s in raw.split(",") if s.strip() and s.strip() != "demo"]
 
 
