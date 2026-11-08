@@ -43,6 +43,51 @@ def _launch(p, headless: bool):
         raise
 
 
+def _wait_for_user(context, target: Path, message: str,
+                   on_tick: Callable[[], None] | None = None) -> str:
+    """Wait until the user presses Enter in the terminal OR closes the browser window.
+
+    The session is saved every few seconds while the window is open, so closing
+    the window instead of pressing Enter does not lose the login.
+    Returns "enter" or "closed".
+    """
+    import select
+    import time
+
+    print(message, end="", flush=True)
+    last_save = 0.0
+    while True:
+        if on_tick:
+            on_tick()
+        open_pages = [pg for pg in context.pages if not pg.is_closed()]
+        if not open_pages:
+            print("\n   (חלון הדפדפן נסגר)")
+            return "closed"
+        if time.time() - last_save > 3:
+            try:
+                context.storage_state(path=str(target))
+                target.chmod(0o600)
+                last_save = time.time()
+            except Exception:
+                pass
+        if sys.stdin.isatty():
+            ready, _, _ = select.select([sys.stdin], [], [], 0)
+            if ready:
+                sys.stdin.readline()
+                break
+        try:
+            # Short wait on the page also lets Playwright process browser events.
+            open_pages[0].wait_for_timeout(400)
+        except Exception:
+            continue  # the window was closed during the wait
+    try:
+        context.storage_state(path=str(target))
+        target.chmod(0o600)
+    except Exception:
+        pass
+    return "enter"
+
+
 def manual_login(settings: Settings, source: str, start_url: str,
                  display_name: str, prompt: Callable[[str], str] = input) -> Path:
     """Open a visible browser at ``start_url``; the user logs in; we save the session."""
@@ -60,10 +105,13 @@ def manual_login(settings: Settings, source: str, start_url: str,
         page.goto(start_url)
         print(f"\n🔐 נפתח חלון דפדפן של {display_name}.")
         print("   התחברו ידנית (כולל אימות דו-שלבי אם נדרש).")
-        prompt("   כשאתם רואים את המסך הראשי של האתר — חזרו לכאן והקישו Enter... ")
-        context.storage_state(path=str(target))
-        target.chmod(0o600)
-        browser.close()
+        _wait_for_user(context, target,
+                       "   כשאתם רואים את המסך הראשי של האתר — חזרו לכאן והקישו Enter"
+                       " (או סגרו את החלון)... ")
+        try:
+            browser.close()
+        except Exception:
+            pass
     print(f"✅ ההתחברות נשמרה מקומית ({target.name}).")
     return target
 
@@ -84,17 +132,32 @@ def capture_session(settings: Settings, source: str, start_url: str, display_nam
     out_dir.chmod(0o700)
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     out_file = out_dir / f"capture-{stamp}.jsonl"
-    records: list[dict[str, Any]] = []
+    counter = {"n": 0}
+    fh = out_file.open("w", encoding="utf-8")
+    out_file.chmod(0o600)
+
+    pending: list[Any] = []
 
     def on_response(resp):
+        # Event handlers must not call blocking Playwright APIs: just queue.
         try:
-            ctype = resp.headers.get("content-type", "")
-            if "json" not in ctype or resp.request.method != "GET":
-                return
-            records.append({"url": resp.url, "status": resp.status, "page": resp.frame.url,
-                            "body": resp.json()})
+            if "json" in resp.headers.get("content-type", "") and resp.request.method == "GET":
+                pending.append(resp)
         except Exception:
             pass
+
+    def drain():
+        # Written immediately, so nothing is lost if the window is closed.
+        while pending:
+            resp = pending.pop(0)
+            try:
+                rec = {"url": resp.url, "status": resp.status, "page": resp.frame.url,
+                       "body": resp.json()}
+            except Exception:
+                continue
+            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+            fh.flush()
+            counter["n"] += 1
 
     with sync_playwright() as p:
         browser = _launch(p, headless=False)
@@ -107,15 +170,15 @@ def capture_session(settings: Settings, source: str, start_url: str, display_nam
         page.goto(start_url)
         print(f"\n🧭 מצב כיול ל-{display_name}: היכנסו לעמודים הרלוונטיים (התנהגות, הודעות,")
         print("   ציונים, שיעורי בית / משימות). לא ללחוץ על 'שלח' או 'הגש'.")
-        prompt("   בסיום הקישו Enter... ")
-        context.storage_state(path=str(target))
-        target.chmod(0o600)
-        browser.close()
-    with out_file.open("w", encoding="utf-8") as f:
-        for r in records:
-            f.write(json.dumps(r, ensure_ascii=False) + "\n")
-    out_file.chmod(0o600)
-    print(f"✅ נשמרו {len(records)} תגובות JSON מקומית: {out_file}")
+        _wait_for_user(context, target, "   בסיום הקישו Enter כאן (או סגרו את החלון)... ",
+                       on_tick=drain)
+        drain()
+        try:
+            browser.close()
+        except Exception:
+            pass
+    fh.close()
+    print(f"✅ נשמרו {counter['n']} תגובות JSON מקומית: {out_file}")
     return out_file
 
 
@@ -126,6 +189,7 @@ class HeadlessSession:
         self.settings = settings
         self.source = source
         self.responses: list[dict[str, Any]] = []
+        self._pending: list[Any] = []
         self._pw = None
         self.browser = None
         self.context = None
@@ -147,11 +211,21 @@ class HeadlessSession:
     def _on_response(self, resp) -> None:
         try:
             if "json" in resp.headers.get("content-type", "") and resp.request.method == "GET":
-                self.responses.append({"url": resp.url, "status": resp.status, "body": resp.json()})
+                self._pending.append(resp)
         except Exception:
             pass
 
+    def _drain(self) -> None:
+        while self._pending:
+            resp = self._pending.pop(0)
+            try:
+                self.responses.append({"url": resp.url, "status": resp.status, "body": resp.json()})
+            except Exception:
+                pass
+
     def json_matching(self, pattern: str) -> list[Any]:
+        """Bodies of JSON GET responses whose URL matches. Call while the browser is open."""
+        self._drain()
         rx = re.compile(pattern)
         return [r["body"] for r in self.responses if rx.search(r["url"]) and r["status"] == 200]
 

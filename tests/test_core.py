@@ -236,3 +236,53 @@ def test_gitignore_covers_secrets():
                                  text=True).stdout.split()
         bad = [f for f in tracked if f == ".env" or f.startswith("data/") or f.endswith(".sqlite3")]
         assert not bad, bad
+
+
+def test_frontend_js_syntax():
+    import shutil
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("node not installed")
+    r = subprocess.run([node, "--check", str(PROJECT_ROOT / "frontend" / "app.js")],
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+
+
+def test_dashboard_renders_in_real_browser(tmp_path):
+    """End-to-end: demo data → server → Chromium renders Hebrew sections (no JS errors)."""
+    import socket
+    import threading
+
+    import uvicorn
+    pw = pytest.importorskip("playwright.sync_api")
+    s = settings_for(tmp_path)
+    run_recap(s, [DemoCollector(s, log=quiet, now=datetime.now())], log=quiet)
+    sock = socket.socket(); sock.bind(("127.0.0.1", 0)); port = sock.getsockname()[1]; sock.close()
+    server = uvicorn.Server(uvicorn.Config(create_app(data_dir=tmp_path), host="127.0.0.1",
+                                           port=port, log_level="error"))
+    t = threading.Thread(target=server.run, daemon=True); t.start()
+    try:
+        import time
+        for _ in range(50):
+            if server.started:
+                break
+            time.sleep(0.1)
+        with pw.sync_playwright() as p:
+            try:
+                b = p.chromium.launch()
+            except Exception as e:
+                pytest.skip(f"chromium unavailable: {e}")
+            page = b.new_page()
+            errors = []
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            page.goto(f"http://localhost:{port}/?profile=demo")
+            page.wait_for_selector(".summary-grid", timeout=8000)
+            text = page.inner_text("body")
+            assert not errors, errors
+            for heading in ("סיכום התנהגות שבועי", "משימות", "הודעות חשובות", "סיכום כללי", "נתוני דמה"):
+                assert heading in text
+            assert page.evaluate("getComputedStyle(document.body).direction") == "rtl"
+            b.close()
+    finally:
+        server.should_exit = True
+        t.join(timeout=5)

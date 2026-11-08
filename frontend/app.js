@@ -211,7 +211,7 @@
     const wrap = h("section", {});
     wrap.append(sectionHead("2", "משימות", t.available ? "ממוינות לפי מועד הגשה" : ""));
     if (!t.available) {
-      wrap.append(unavailable("משימות יופיעו כאן אחרי חיבור Google Classroom, לשון והבעה (מט"ח) או ClassIt (מתמטיקה)."));
+      wrap.append(unavailable("משימות יופיעו כאן אחרי חיבור Google Classroom, לשון והבעה (מט״ח) או ClassIt (מתמטיקה)."));
       return wrap;
     }
     wrap.append(h("div", { class: "task-cols" },
