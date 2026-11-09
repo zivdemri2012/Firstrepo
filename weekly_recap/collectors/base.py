@@ -52,6 +52,10 @@ class Collector(abc.ABC):
         """Interactive manual login (opens a browser window). Optional."""
         raise NotImplementedError(f"{self.name} does not support interactive login")
 
+    def refresh_session(self) -> bool:
+        """Try to renew an expired session without the user. True = worth retrying."""
+        return False
+
     # -- helpers ---------------------------------------------------------
     def result(self, status: str, message: str = "", **kw) -> CollectorResult:
         return CollectorResult(source=self.name, status=status, message=message,
@@ -62,7 +66,13 @@ class Collector(abc.ABC):
         if not ok:
             return self.result("not_configured", why)
         try:
-            return self.collect()
+            try:
+                return self.collect()
+            except NeedsLogin:
+                if not self.refresh_session():
+                    raise
+                self.log("  🔄 ההתחברות חודשה אוטומטית, מנסה שוב...")
+                return self.collect()
         except NeedsLogin as e:
             return self.result("needs_login", str(e) or "נדרשת התחברות ידנית")
         except NeedsCalibration as e:

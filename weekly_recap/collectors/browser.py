@@ -6,6 +6,12 @@ Design rules:
 * After login, the browser's storage state (cookies) is saved locally under
   ``data/profiles/<profile>/sessions/<source>.json`` with 0600 permissions.
 * Collection runs headless re-using that saved session, and only *reads*.
+* The login window uses a persistent browser profile (``data/profiles/<profile>/browser``)
+  shared by all sites, so the identity provider (e.g. the Ministry of Education login)
+  can remember the user like a normal browser does. When a site's own session expires,
+  ``silent_refresh`` just reopens the site headless in that profile: if the identity
+  provider still remembers the user, the site logs in by itself. Nothing is typed or
+  clicked, and if the site asks for a password / code / bot check, the user logs in by hand.
 """
 from __future__ import annotations
 
@@ -33,14 +39,78 @@ def has_session(settings: Settings, source: str) -> bool:
     return session_path(settings, source).is_file()
 
 
+def browser_profile_dir(settings: Settings) -> Path:
+    return settings.profile_dir / "browser"
+
+
+def _deps_error(e: Exception) -> bool:
+    msg = str(e)
+    return "shared libraries" in msg or "libnss3" in msg or "Host system is missing" in msg
+
+
 def _launch(p, headless: bool):
     try:
         return p.chromium.launch(headless=headless)
     except Exception as e:  # missing libnss3 etc.
-        msg = str(e)
-        if "shared libraries" in msg or "libnss3" in msg or "Host system is missing" in msg:
+        if _deps_error(e):
             raise RuntimeError(CHROMIUM_DEPS_HINT) from e
         raise
+
+
+def _launch_persistent(p, settings: Settings, headless: bool):
+    """A browser context backed by the on-disk profile (remembers SSO cookies)."""
+    d = browser_profile_dir(settings)
+    d.mkdir(parents=True, exist_ok=True)
+    d.chmod(0o700)
+    try:
+        return p.chromium.launch_persistent_context(
+            str(d), headless=headless, locale="he-IL", timezone_id=settings.timezone)
+    except Exception as e:
+        if _deps_error(e):
+            raise RuntimeError(CHROMIUM_DEPS_HINT) from e
+        raise
+
+
+_MULTI_TLD = {"co", "org", "ac", "gov", "net", "muni", "k12"}
+
+
+def site_domain_pattern(url: str) -> re.Pattern:
+    """Regex matching cookie domains of the site itself (e.g. ``mashov.info``), not its SSO."""
+    from urllib.parse import urlparse
+
+    labels = (urlparse(url).hostname or "").split(".")
+    n = 3 if len(labels) >= 3 and labels[-2] in _MULTI_TLD else 2
+    base = ".".join(labels[-n:])
+    return re.compile(r"(^|\.)" + re.escape(base) + r"$")
+
+
+def silent_refresh(settings: Settings, source: str, start_url: str,
+                   wait_ms: int = 8000) -> bool:
+    """Reopen the site headless in the persistent profile and save its fresh session.
+
+    Only navigates to the site's own address and waits; returns False when there is
+    no profile yet. Whether the refreshed session works is decided by the collector.
+    """
+    from playwright.sync_api import sync_playwright
+
+    if not browser_profile_dir(settings).is_dir() or not start_url:
+        return False
+    target = session_path(settings, source)
+    with sync_playwright() as p:
+        context = _launch_persistent(p, settings, headless=True)
+        try:
+            page = context.pages[0] if context.pages else context.new_page()
+            try:
+                page.goto(start_url, wait_until="domcontentloaded", timeout=30000)
+                page.wait_for_load_state("networkidle", timeout=20000)
+            except Exception:
+                pass  # slow SSO redirects: keep whatever state was reached
+            page.wait_for_timeout(wait_ms)
+            context.storage_state(path=str(target))
+            target.chmod(0o600)
+        finally:
+            context.close()
+    return True
 
 
 def _wait_for_user(context, target: Path, message: str,
@@ -96,19 +166,23 @@ def manual_login(settings: Settings, source: str, start_url: str,
     settings.ensure_dirs()
     target = session_path(settings, source)
     with sync_playwright() as p:
-        browser = _launch(p, headless=False)
-        # Always a fresh login: a restored session can leave some sites half-logged-in.
-        ctx_kw: dict[str, Any] = {"locale": "he-IL", "timezone_id": settings.timezone}
-        context = browser.new_context(**ctx_kw)
-        page = context.new_page()
+        context = _launch_persistent(p, settings, headless=False)
+        # Fresh login for this site (a restored session can leave some sites
+        # half-logged-in), but keep the identity provider's cookies in the profile.
+        try:
+            context.clear_cookies(domain=site_domain_pattern(start_url))
+        except Exception:
+            pass
+        page = context.pages[0] if context.pages else context.new_page()
         page.goto(start_url)
         print(f"\n🔐 נפתח חלון דפדפן של {display_name}.")
         print("   התחברו ידנית (כולל אימות דו-שלבי אם נדרש).")
+        print("   אם יש אפשרות \"זכור אותי\" / \"הישאר מחובר\" — כדאי לסמן אותה.")
         _wait_for_user(context, target,
                        "   כשאתם רואים את המסך הראשי של האתר — חזרו לכאן והקישו Enter"
                        " (או סגרו את החלון)... ")
         try:
-            browser.close()
+            context.close()
         except Exception:
             pass
     print(f"✅ ההתחברות נשמרה מקומית ({target.name}).")

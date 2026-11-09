@@ -292,3 +292,36 @@ def test_dashboard_renders_in_real_browser(tmp_path):
     finally:
         server.should_exit = True
         t.join(timeout=5)
+
+
+def test_site_domain_pattern_keeps_sso_cookies():
+    from weekly_recap.collectors.browser import site_domain_pattern
+    rx = site_domain_pattern("https://web.mashov.info/students/login")
+    assert rx.search("web.mashov.info") and rx.search(".mashov.info")
+    assert not rx.search("lgn.edu.gov.il")
+    rx = site_domain_pattern("https://lms.cet.ac.il/x")
+    assert rx.search(".cet.ac.il") and not rx.search(".ac.il") and not rx.search("edu.gov.il")
+
+
+def test_run_retries_once_after_silent_refresh(tmp_path):
+    from weekly_recap.collectors.base import Collector, NeedsLogin
+    from weekly_recap.config import Settings
+
+    class Flaky(Collector):
+        name = "flaky"
+        def __init__(self, refresh_ok):
+            super().__init__(Settings(data_dir=tmp_path), log=lambda m: None)
+            self.calls, self.refresh_ok = 0, refresh_ok
+        def is_configured(self):
+            return True, ""
+        def refresh_session(self):
+            return self.refresh_ok
+        def collect(self):
+            self.calls += 1
+            if self.calls == 1:
+                raise NeedsLogin("expired")
+            return self.result("ok")
+
+    assert Flaky(True).run().status == "ok"
+    c = Flaky(False)
+    assert c.run().status == "needs_login" and c.calls == 1

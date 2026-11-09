@@ -36,6 +36,15 @@ class BrowserSiteCollector(Collector):
             raise SystemExit(why)
         browser.manual_login(self.settings, self.name, self.start_url, self.display_name)
 
+    def refresh_session(self) -> bool:
+        if not self.start_url:
+            return False
+        try:
+            return browser.silent_refresh(self.settings, self.name, self.start_url)
+        except Exception as e:
+            self.log(f"  (חידוש אוטומטי נכשל: {type(e).__name__})")
+            return False
+
     def capture(self) -> None:
         ok, why = self.is_configured()
         if not ok:
