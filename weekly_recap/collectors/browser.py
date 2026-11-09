@@ -142,7 +142,9 @@ def capture_session(settings: Settings, source: str, start_url: str, display_nam
         # Event handlers must not call blocking Playwright APIs: just queue.
         try:
             ctype = resp.headers.get("content-type", "")
-            if "json" in ctype and resp.request.method == "GET":
+            # POST too: some sites (CET) load data via POST queries. Only responses are
+            # recorded; the tool itself never sends anything during capture.
+            if "json" in ctype and resp.request.method in ("GET", "POST"):
                 pending.append(resp)
             elif ("html" in ctype and resp.request.method == "GET"
                   and resp.request.resource_type == "document" and resp.status == 200):
@@ -205,7 +207,8 @@ def capture_session(settings: Settings, source: str, start_url: str, display_nam
         while pending:
             resp = pending.pop(0)
             try:
-                rec = {"url": resp.url, "status": resp.status, "page": resp.frame.url}
+                rec = {"url": resp.url, "status": resp.status, "page": resp.frame.url,
+                       "method": resp.request.method}
                 if "html" in resp.headers.get("content-type", ""):
                     rec["html"] = resp.text()
                 else:

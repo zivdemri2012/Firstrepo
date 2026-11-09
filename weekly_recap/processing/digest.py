@@ -11,6 +11,7 @@ from typing import Any
 
 from .report import _join, _parse_dt
 
+UNSURE_SUBMISSION_SOURCES = {"cet"}
 WEEKDAYS = ["שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת", "ראשון"]  # date.weekday() order
 
 
@@ -43,11 +44,17 @@ def format_digest(report: dict[str, Any], now: datetime | None = None) -> str:
             lines.extend([f"**{title}**", *[f"- {i}" for i in items], ""])
 
     # ⚠️ urgent: open tasks due within 48h + recently-late tasks
-    urgent_open = [t for t in tasks["open"] if t.get("urgency") == "urgent"]
-    later_open = [t for t in tasks["open"] if t.get("urgency") != "urgent"]
+    # CET does not reliably report submissions, so its open tasks are only dates, never "urgent".
+    known = [t for t in tasks["open"] if t["source"] not in UNSURE_SUBMISSION_SOURCES]
+    unsure = [t for t in tasks["open"] if t["source"] in UNSURE_SUBMISSION_SOURCES]
+    urgent_open = [t for t in known if t.get("urgency") == "urgent"]
+    later_open = [t for t in known if t.get("urgency") != "urgent"]
     section("⚠️ דחוף:", [f"{_task(t)} — {_when(_parse_dt(t['due_at']), now)}, עוד לא סומנה כהוגשה."
                          for t in urgent_open])
     section("📅 בהמשך:", [f"{_task(t)} — {_when(_parse_dt(t['due_at']), now)}." for t in later_open])
+    if unsure:
+        section("🗓️ תאריכי הגשה במט\"ח (האתר לא מראה אם הגשת — אם כבר עשית, אפשר להתעלם):",
+                [f"{_task(t)} — {_when(_parse_dt(t['due_at']), now).replace('**', '')}." for t in unsure])
 
     # ✅ good things
     good: list[str] = []

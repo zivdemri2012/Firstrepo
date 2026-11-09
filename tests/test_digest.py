@@ -18,8 +18,8 @@ def report(open_tasks=(), late=(), events=(), grades=(), sources=("mashov", "cet
 
 
 def test_urgent_and_bottom_line():
-    t = {"source": "cet", "subject": "הבעה", "title": "חיבור", "due_at": "2026-11-09T23:59", "urgency": "urgent"}
-    n = {"source": "cet", "subject": "לשון", "title": "תרגול", "due_at": "2026-11-15T23:59", "urgency": "normal"}
+    t = {"source": "mashov", "subject": "הבעה", "title": "חיבור", "due_at": "2026-11-09T23:59", "urgency": "urgent"}
+    n = {"source": "mashov", "subject": "לשון", "title": "תרגול", "due_at": "2026-11-15T23:59", "urgency": "normal"}
     out = format_digest(report(open_tasks=[t, n]), NOW)
     assert "⚠️ דחוף" in out and "**היום עד 23:59**" in out
     assert "עד יום ראשון 15.11" in out
@@ -33,3 +33,10 @@ def test_nothing_urgent_with_absence():
     assert "⚠️ דחוף" not in out and "🔔 לשים לב" in out and "חיסור ב\"היסטוריה\" ב-08.11" in out
     assert "ציונים חדשים בלשון: **95**" in out
     assert "אין שום דבר דחוף" not in out
+
+
+def test_cet_tasks_are_dates_not_urgent():
+    t = {"source": "cet", "subject": "הבעה", "title": "חיבור", "due_at": "2026-11-09T23:59", "urgency": "urgent"}
+    out = format_digest(report(open_tasks=[t]), NOW)
+    assert "⚠️ דחוף" not in out and "תאריכי הגשה במט\"ח" in out and "היום עד 23:59" in out
+    assert "אין שום דבר דחוף" in out
