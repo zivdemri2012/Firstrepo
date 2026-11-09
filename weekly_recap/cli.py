@@ -10,6 +10,7 @@ from .config import DEMO_PROFILE, load_settings
 from .database.db import Database, week_start_for
 from .models import CollectorResult
 from .pipeline import default_sources, make_collector, run_recap
+from .processing.digest import format_digest
 
 LOGIN_SOURCES = ("mashov", "classroom", "cet", "classit")
 CAPTURE_SOURCES = ("mashov", "cet", "classit")
@@ -61,10 +62,11 @@ def main(argv: list[str] | None = None) -> int:
         if settings.is_demo and settings.db_path.is_file():
             settings.db_path.unlink()  # demo preview always starts fresh (real profiles never do)
         print(f"📚 Weekly Recap — {'נתוני דמה' if settings.is_demo else 'פרופיל ' + settings.profile}")
-        _, results = run_recap(settings, collectors, on_result=_maybe_login)
+        report, results = run_recap(settings, collectors, on_result=_maybe_login)
         if settings.is_demo:
             _seed_demo_history(settings)
         _hints(results)
+        print("\n" + format_digest(report) + "\n")
 
     if args.no_open:
         print(f"הדוח זמין בכתובת: {launcher.dashboard_url(settings, settings.profile)}")
