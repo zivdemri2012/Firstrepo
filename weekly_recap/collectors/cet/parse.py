@@ -10,6 +10,8 @@ Field names come from a calibration capture of the real student site
                                  State ("submitted"/"evaluated"), SubmittedTime (epoch)
                                  and Scores.FinalScore.
 
+A past-due task with no submission record is skipped, not shown as late: the student
+confirmed that such tasks were not actually late (the הבעה class returns no scores at all).
 Unscheduled "SelfLearning" items are the course's optional library, not assignments,
 so they are skipped. Pure functions → unit-tested with synthetic fixtures.
 """
@@ -82,7 +84,9 @@ def map_tasks(tasks: list[dict[str, Any]], scores: list[dict[str, Any]], subject
             sub_at = _utc(((score or {}).get("StudentLmsInfo") or {}).get("SubmittedTime"))
             submitted_late = bool(sub_at and due and sub_at > due)
         elif due is not None and due < now:
-            status = TaskStatus.LATE
+            # No submission record and the date passed. CET has no score record for every
+            # class (e.g. הבעה returned none at all), so "late" can't be known. Don't guess it.
+            continue
         else:
             status = TaskStatus.OPEN
         out.append(Task(

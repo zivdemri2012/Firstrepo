@@ -33,8 +33,9 @@ def test_task_statuses_and_filters():
              task("d", "ספרייה", "2027-07-31T23:59:59", ttype="SelfLearning", scheduled=False),
              task("e", "מוסתרת", "2026-11-20T21:59:59", hidden=True)]
     out = parse.map_tasks(tasks, [score("a")], "לשון", "https://x", NOW, TZ)
-    assert [t.external_id for t in out] == ["cet:a", "cet:b", "cet:c"]
-    assert [t.status for t in out] == [TaskStatus.SUBMITTED, TaskStatus.OPEN, TaskStatus.LATE]
+    # "c" is past due with no submission record → unknown, so it is not reported as late.
+    assert [t.external_id for t in out] == ["cet:a", "cet:b"]
+    assert [t.status for t in out] == [TaskStatus.SUBMITTED, TaskStatus.OPEN]
     assert out[0].submitted_late is False and out[1].submitted_late is None
     # UTC → Israel time (winter, UTC+2); created_at drops fractional seconds.
     assert out[1].due_at == "2026-11-20T23:59" and out[0].created_at == "2026-10-18T12:29"
