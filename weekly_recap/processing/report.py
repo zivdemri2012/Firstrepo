@@ -80,7 +80,7 @@ def build_report(db: Database, now: datetime | None = None, is_demo: bool = Fals
 
     report["behavior"] = _behavior(db, statuses, ws, we)
     report["tasks"] = _tasks(db, statuses, run, now, ws)
-    report["messages"] = _messages(db, statuses, run)
+    report["messages"] = _messages(db, statuses, run, ws)
     report["history"] = [dict(r) for r in db.snapshots(12)]
     report["summary"] = build_summary(report, now)
     return report
@@ -177,16 +177,21 @@ def _tasks(db: Database, statuses: list[dict], run, now: datetime, ws: date) -> 
     return out
 
 
-def _messages(db: Database, statuses: list[dict], run) -> dict[str, Any]:
+def _messages(db: Database, statuses: list[dict], run, ws: date) -> dict[str, Any]:
     msg_sources = {r["source"] for r in db.conn.execute("SELECT DISTINCT source FROM messages")}
     ok_sources = {s["source"] for s in statuses if s["last_success_at"]}
     out: dict[str, Any] = {"available": bool(msg_sources & ok_sources),
                            "by_category": {c.value: [] for c in MessageCategory}, "count": 0}
     if not run:
         return out
+    # The recap is weekly: anything first seen this week stays in it across repeated runs,
+    # unless it was dismissed in the dashboard (read_at = timestamp) or is old baseline data.
     for r in db.conn.execute(
         """SELECT id, source, category, title, date, sender, subject, body, url, grade
-           FROM messages WHERE read_at IS NULL ORDER BY date DESC, id DESC"""
+           FROM messages
+           WHERE read_at IS NULL OR (read_at LIKE 'shown:%' AND first_seen_at >= ?)
+           ORDER BY date DESC, id DESC""",
+        (ws.isoformat(),),
     ):
         m = dict(r)
         m["source_name"] = DISPLAY_NAMES.get(m["source"], m["source"])

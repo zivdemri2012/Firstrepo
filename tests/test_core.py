@@ -51,20 +51,26 @@ def quiet(*_a, **_k):
 
 
 # ---------------------------------------------------------------- dedup
-def test_messages_are_not_shown_twice(tmp_path):
+def test_messages_stay_for_the_week_without_duplicates(tmp_path):
     s = settings_for(tmp_path)
     demo = DemoCollector(s, log=quiet, now=NOW)
     r1, _ = run_recap(s, [demo], now=NOW, log=quiet)
     first = r1["messages"]["count"]
     assert first == 6
 
+    # Running again in the same week: the weekly recap still shows them (once each).
     r2, _ = run_recap(s, [DemoCollector(s, log=quiet, now=NOW)], now=NOW + timedelta(hours=1), log=quiet)
-    assert r2["messages"]["count"] == 0, "already-reported messages must not reappear"
+    assert r2["messages"]["count"] == 6
 
     r3, _ = run_recap(s, [DemoCollector(s, log=quiet, now=NOW, variant=1)],
                       now=NOW + timedelta(hours=2), log=quiet)
-    assert r3["messages"]["count"] == 1  # only the genuinely new grade
-    assert r3["messages"]["by_category"]["grade"][0]["grade"] == "91"
+    assert r3["messages"]["count"] == 7  # plus the genuinely new grade
+    assert "91" in [g["grade"] for g in r3["messages"]["by_category"]["grade"]]
+
+    # Next week they were already reported, so they drop out.
+    r4, _ = run_recap(s, [DemoCollector(s, log=quiet, now=NOW, variant=1)],
+                      now=NOW + timedelta(days=7), log=quiet)
+    assert r4["messages"]["count"] == 0
 
 
 def test_old_messages_on_first_sync_are_baseline(tmp_path):
