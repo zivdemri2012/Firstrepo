@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Mission check launcher. Usage:  mission check cet|classit|mashov
+set -euo pipefail
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
+PY="$ROOT/.venv/bin/python"
+if [[ "${1:-}" != "check" ]]; then
+  echo "שימוש: mission check cet|classit|mashov" >&2
+  exit 2
+fi
+cd "$ROOT"
+exec env PYTHONPATH="$ROOT" "$PY" -m weekly_recap.mission "$@"

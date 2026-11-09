@@ -22,6 +22,7 @@ mkdir -p data && chmod 700 data
 
 mkdir -p "$HOME/.local/bin"
 ln -sf "$ROOT/scripts/weekly" "$HOME/.local/bin/weekly"
+ln -sf "$ROOT/scripts/mission" "$HOME/.local/bin/mission"
 case ":$PATH:" in
   *":$HOME/.local/bin:"*) ;;
   *) echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"; echo "נוסף ~/.local/bin ל-PATH (פתחו טרמינל חדש)." ;;
