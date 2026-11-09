@@ -23,7 +23,7 @@ def register(cls: type["Collector"]) -> type["Collector"]:
 
 def available() -> dict[str, type["Collector"]]:
     # Import side effect: modules register themselves.
-    from . import cet, classit, classroom, demo, galim, mashov  # noqa: F401
+    from . import cet, classit, classroom, demo, mashov  # noqa: F401
     return dict(_REGISTRY)
 
 

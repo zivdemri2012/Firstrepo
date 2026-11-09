@@ -21,7 +21,7 @@ STATUS_LABELS = {
     "skipped": "דולג",
 }
 
-DISPLAY_NAMES = {"mashov": "משוב", "classroom": "Google Classroom", "galim": "גלים פרו", "cet": "לשון והבעה (מט\"ח)", "classit": "ClassIt (מתמטיקה)",
+DISPLAY_NAMES = {"mashov": "משוב", "classroom": "Google Classroom", "cet": "לשון והבעה (מט\"ח)", "classit": "ClassIt (מתמטיקה)",
                  "demo": "נתוני דמה"}
 
 OLD_LATE_DAYS = 30

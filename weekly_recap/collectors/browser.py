@@ -116,7 +116,8 @@ def manual_login(settings: Settings, source: str, start_url: str,
 
 
 def capture_session(settings: Settings, source: str, start_url: str, display_name: str,
-                    prompt: Callable[[str], str] = input, fresh: bool = True) -> Path:
+                    prompt: Callable[[str], str] = input, fresh: bool = True,
+                    capture_dom: bool = False) -> Path:
     """Calibration mode: user browses the relevant pages; we record the JSON the site loads.
 
     The capture is saved only locally (gitignored) and is used to build the
@@ -140,7 +141,12 @@ def capture_session(settings: Settings, source: str, start_url: str, display_nam
     def on_response(resp):
         # Event handlers must not call blocking Playwright APIs: just queue.
         try:
-            if "json" in resp.headers.get("content-type", "") and resp.request.method == "GET":
+            ctype = resp.headers.get("content-type", "")
+            if "json" in ctype and resp.request.method == "GET":
+                pending.append(resp)
+            elif ("html" in ctype and resp.request.method == "GET"
+                  and resp.request.resource_type == "document" and resp.status == 200):
+                # Server-rendered sites (e.g. ClassIt) put the data in the HTML itself.
                 pending.append(resp)
             elif resp.status >= 400 and resp.request.resource_type in ("xhr", "fetch"):
                 failures.append({"meta": "http_error", "url": resp.url, "type": "fetch",
@@ -159,7 +165,36 @@ def capture_session(settings: Settings, source: str, start_url: str, display_nam
 
     failures: list[dict[str, Any]] = []
 
+    dom_state: dict[str, Any] = {"ctx": None, "last": 0.0, "seen": set()}
+
+    def snapshot_dom():
+        # Sites that render data client-side (e.g. ClassIt) never send it as JSON or as a
+        # document: save the rendered page every few seconds, only when it changed.
+        import hashlib
+        import time
+        ctx = dom_state["ctx"]
+        if ctx is None or time.time() - dom_state["last"] < 3:
+            return
+        dom_state["last"] = time.time()
+        for pg in list(ctx.pages):
+            try:
+                if pg.is_closed():
+                    continue
+                html = pg.content()
+            except Exception:
+                continue
+            digest = hashlib.sha1(html.encode("utf-8", "ignore")).hexdigest()
+            if digest in dom_state["seen"]:
+                continue
+            dom_state["seen"].add(digest)
+            fh.write(json.dumps({"url": pg.url, "page": pg.url, "dom": html}, ensure_ascii=False) + "\n")
+            fh.flush()
+            counter["n"] += 1
+            path = re.sub(r"https?://[^/]+", "", pg.url).split("?")[0]
+            print(f"\n   📸 [{counter['n']}] {path} צילום עמוד ({len(html) // 1024}KB)", end="", flush=True)
+
     def drain():
+        snapshot_dom()
         while failures:
             rec = failures.pop(0)
             fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
@@ -170,8 +205,11 @@ def capture_session(settings: Settings, source: str, start_url: str, display_nam
         while pending:
             resp = pending.pop(0)
             try:
-                rec = {"url": resp.url, "status": resp.status, "page": resp.frame.url,
-                       "body": resp.json()}
+                rec = {"url": resp.url, "status": resp.status, "page": resp.frame.url}
+                if "html" in resp.headers.get("content-type", ""):
+                    rec["html"] = resp.text()
+                else:
+                    rec["body"] = resp.json()
             except Exception:
                 continue
             fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
@@ -180,8 +218,11 @@ def capture_session(settings: Settings, source: str, start_url: str, display_nam
             # Live feedback: endpoint path + item count only (no personal values).
             path = re.sub(r"https?://[^/]+", "", resp.url).split("?")[0]
             path = re.sub(r"[0-9a-fA-F-]{20,}", "…", path)
-            body = rec["body"]
-            size = f"{len(body)} פריטים" if isinstance(body, (list, dict)) else ""
+            body = rec.get("body")
+            if "html" in rec:
+                size = f"עמוד HTML ({len(rec['html']) // 1024}KB)"
+            else:
+                size = f"{len(body)} פריטים" if isinstance(body, (list, dict)) else ""
             print(f"\n   📥 [{counter['n']}] {path} {size}", end="", flush=True)
 
     with sync_playwright() as p:
@@ -196,6 +237,8 @@ def capture_session(settings: Settings, source: str, start_url: str, display_nam
         context.on("requestfailed", on_failed)
         page = context.new_page()
         page.goto(start_url)
+        if capture_dom:
+            dom_state["ctx"] = context
         print(f"\n🧭 מצב כיול ל-{display_name}.")
         print("   קודם התחברו בחלון שנפתח (גם אם כבר התחברתם קודם).")
         print("   היכנסו בתפריט של האתר לכל עמוד רלוונטי (למשל: התנהגות, הודעות, ציונים,")
@@ -209,7 +252,7 @@ def capture_session(settings: Settings, source: str, start_url: str, display_nam
         except Exception:
             pass
     fh.close()
-    print(f"✅ נשמרו {counter['n']} תגובות JSON מקומית: {out_file}")
+    print(f"✅ נשמרו {counter['n']} תגובות (JSON/HTML) מקומית: {out_file}")
     return out_file
 
 

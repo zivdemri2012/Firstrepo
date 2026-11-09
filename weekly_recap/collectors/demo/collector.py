@@ -66,7 +66,7 @@ class DemoCollector(Collector):
                  "https://example.com/demo/task3", submitted_late=False),
             Task("demo-t4", "דו\"ח מעבדה – תאים", TaskStatus.LATE, "מדעים", "[דמה] יוסי פרץ",
                  _d(now, -3, 23, 59).isoformat(timespec="minutes"), "https://example.com/demo/task4"),
-            Task("demo-t5", "תרגול גלים: שברים עשרוניים", TaskStatus.OPEN, "מתמטיקה", None,
+            Task("demo-t5", "תרגול: שברים עשרוניים", TaskStatus.OPEN, "מתמטיקה", None,
                  _d(now, 1, 18).isoformat(timespec="minutes"), "https://example.com/demo/task5"),
         ]
         if self.variant >= 1:

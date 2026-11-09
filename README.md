@@ -14,7 +14,7 @@ weekly recap
 ```bash
 cd ~/school-tools
 ./scripts/install.sh            # venv, חבילות, Chromium של Playwright, פקודת weekly
-sudo apt-get install -y libnss3 libnspr4   # פעם אחת, רק עבור איסוף ממשוב/גלים (WSL)
+sudo apt-get install -y libnss3 libnspr4   # פעם אחת, רק עבור איסוף ממשוב/מט"ח/ClassIt (WSL)
 ```
 
 ## פקודות
@@ -45,7 +45,7 @@ weekly_recap/
   collectors/        איסוף (מודול לכל אתר; @register + WR_SOURCES)
     base.py          ממשק Collector + רישום
     browser.py       Playwright: התחברות ידנית, session שמור, מצב כיול
-    mashov/ classroom/ cet/ classit/ galim/ demo/
+    mashov/ classroom/ cet/ classit/ demo/
   processing/        עיבוד: סיווג עברי, בניית הדוח והסיכום הטבעי
   database/db.py     SQLite: מניעת כפילויות, מעקב שינויים במשימות, היסטוריה שבועית
   server/app.py      FastAPI (127.0.0.1 בלבד)

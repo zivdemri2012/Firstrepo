@@ -29,7 +29,7 @@ esac
 
 if ldd "$(ls -d "$HOME"/.cache/ms-playwright/chromium-*/chrome-linux*/chrome | tail -1)" 2>/dev/null | grep -q "not found"; then
   echo
-  echo "⚠️  ל-Chromium חסרות ספריות מערכת (נדרש רק לאיסוף ממשוב/גלים). הריצו פעם אחת:"
+  echo "⚠️  ל-Chromium חסרות ספריות מערכת (נדרש רק לאיסוף ממשוב/מט"ח/ClassIt). הריצו פעם אחת:"
   echo "    sudo apt-get install -y libnss3 libnspr4"
 fi
 echo "✅ מוכן. הפעלה: weekly recap   (תצוגת דמה: weekly recap --demo)"

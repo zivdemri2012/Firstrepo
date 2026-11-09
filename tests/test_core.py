@@ -149,8 +149,8 @@ def test_weekly_history_and_comparison(tmp_path):
 # ------------------------------------------------------- no invented data
 def test_unconfigured_sources_show_no_numbers(tmp_path):
     s = settings_for(tmp_path, "default")
-    s.env = {k: v for k, v in s.env.items() if not k.startswith(("MASHOV", "GALIM", "CLASSROOM", "CET", "CLASSIT"))}
-    cols = [make_collector(s, n, log=quiet) for n in ("mashov", "classroom", "cet", "classit", "galim")]
+    s.env = {k: v for k, v in s.env.items() if not k.startswith(("MASHOV", "CLASSROOM", "CET", "CLASSIT"))}
+    cols = [make_collector(s, n, log=quiet) for n in ("mashov", "classroom", "cet", "classit")]
     r, results = run_recap(s, cols, now=NOW, log=quiet)
     assert {x.status for x in results.values()} == {"not_configured"}
     assert r["behavior"]["available"] is False and r["behavior"]["counts"] is None

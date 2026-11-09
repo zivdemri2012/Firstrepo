@@ -11,8 +11,8 @@ from .database.db import Database, week_start_for
 from .models import CollectorResult
 from .pipeline import default_sources, make_collector, run_recap
 
-LOGIN_SOURCES = ("mashov", "classroom", "cet", "classit", "galim")
-CAPTURE_SOURCES = ("mashov", "cet", "classit", "galim")
+LOGIN_SOURCES = ("mashov", "classroom", "cet", "classit")
+CAPTURE_SOURCES = ("mashov", "cet", "classit")
 
 
 def build_parser() -> argparse.ArgumentParser:

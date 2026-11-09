@@ -18,6 +18,8 @@ class BrowserSiteCollector(Collector):
     env_prefix: str = ""
     #: Pages (relative or absolute URLs) to visit during collection. Set by the parser.
     pages: list[str] = []
+    #: Also save the rendered page during capture (for sites that render data client-side).
+    capture_dom: bool = False
 
     @property
     def start_url(self) -> str:
@@ -38,7 +40,8 @@ class BrowserSiteCollector(Collector):
         ok, why = self.is_configured()
         if not ok:
             raise SystemExit(why)
-        browser.capture_session(self.settings, self.name, self.start_url, self.display_name)
+        browser.capture_session(self.settings, self.name, self.start_url, self.display_name,
+                               capture_dom=self.capture_dom)
 
     def collect(self) -> CollectorResult:
         if not browser.has_session(self.settings, self.name):
